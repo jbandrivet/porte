@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Entraînement garde debout — partage WhatsApp</title>
+  <style>
+    :root{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;
+      --primary:#3b82f6;
+      --primary-hover:#2563eb;
+      --success:#10b981;
+      --danger:#ef4444;
+      --warning:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#e6eef8;padding:20px}
+    .card{width:min(900px,100%);background:linear-gradient(180deg,#1e293b, #0f172a);padding:30px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.05)}
+    h1{margin:0 0 8px;font-size:28px;background:linear-gradient(90deg,#60a5fa,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    p{margin:4px 0 20px;color:#94a3b8;font-size:15px}
+    .main-content{display:grid;grid-template-columns:1fr 1fr;gap:30px}
+    @media(max-width:768px){
+      .main-content{grid-template-columns:1fr}
+      .card{padding:20px}
+    }
+    .result-section{background:rgba(59,130,246,.05);padding:24px;border-radius:12px;border:1px solid rgba(59,130,246,.2);position:relative}
+    .status-display{text-align:center;margin:20px 0}
+    .status-icon{font-size:80px;margin:20px 0;animation:float 3s ease-in-out infinite}
+    @keyframes float{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-10px)}
+    }
+    .status-text{font-size:24px;font-weight:600;color:#60a5fa;margin:12px 0}
+    .elapsed-time{font-size:18px;color:#94a3b8;font-family:monospace;letter-spacing:2px}
+    .controls{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+    button{padding:14px 24px;border-radius:10px;border:0;cursor:pointer;font-weight:600;font-size:16px;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:8px}
+    button:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+    button:active{transform:translateY(0)}
+    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:hover:not(:disabled){background:var(--primary-hover)}
+    .btn-danger{background:var(--danger);color:white}
+    .btn-danger:hover:not(:disabled){background:#dc2626}
+    .btn-success{background:var(--success);color:white}
+    .btn-success:hover{background:#059669}
+    .btn-warning{background:var(--warning);color:white}
+    .btn-warning:hover{background:#d97706}
+    .btn-secondary{background:rgba(100,116,139,.2);color:#e2e8f0;border:1px solid rgba(255,255,255,.1)}
+    .btn-secondary:hover{background:rgba(100,116,139,.3)}
+    .settings{background:rgba(15,23,42,.5);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,.05)}
+    .setting-group{margin-bottom:16px}
+    .setting-group:last-child{margin-bottom:0}
+    label{display:block;margin-bottom:6px;color:#cbd5e1;font-size:14px;font-weight:500}
+    .checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border-radius:8px;transition:background .2s}
+    .checkbox-label:hover{background:rgba(255,255,255,.03)}
+    input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
+    input[type=text],input[type=number]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.6);color:#e2e8f0;font-size:14px;transition:all .2s}
+    input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    textarea{width:100%;height:120px;border-radius:8px;padding:12px;margin-top:8px;border:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.6);color:#e2e8f0;font-family:monospace;font-size:13px;resize:vertical}
+    .instructions{background:rgba(15,23,42,.3);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,.05)}
+    .instructions h3{margin:0 0 12px;color:#60a5fa;font-size:18px}
+    .instructions ul{margin:0;padding-left:20px;line-height:1.8;color:#94a3b8}
+    .instructions li{margin-bottom:8px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .stat-card{background:rgba(15,23,42,.4);padding:12px;border-radius:8px;text-align:center;border:1px solid rgba(255,255,255,.05)}
+    .stat-value{font-size:24px;font-weight:700;color:#60a5fa}
+    .stat-label{font-size:12px;color:#94a3b8;margin-top:4px}
+    footer{margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.05);color:#64748b;font-size:13px;text-align:center}
+    .icon{width:20px;height:20px;display:inline-block}
+    .toast{position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);opacity:0;transform:translateY(-20px);transition:all .3s ease;z-index:1000}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .questionnaire{display:none;animation:fadeIn .3s ease}
+    .questionnaire.active{display:block}
+    .questionnaire h3{margin:0 0 16px;color:#60a5fa;font-size:18px;text-align:center}
+    .questionnaire-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(-10px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .phase-indicator{text-align:center;padding:12px;background:rgba(59,130,246,.1);border-radius:8px;margin-bottom:16px;border:1px solid rgba(59,130,246,.2)}
+    .phase-indicator.active{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3)}
+    .phase-indicator.waiting{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);animation:pulse-waiting 2s infinite}
+    @keyframes pulse-waiting{
+      0%,100%{opacity:1}
+      50%{opacity:.7}
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>🚪 Entraînement garde debout</h1>
+    <p>Génère une durée aléatoire entre 2h et 9h. Tenez la position jusqu'au signal sonore !</p>
+
+    <div class="main-content">
+      <div>
+        <div class="result-section">
+          <div class="phase-indicator" id="phaseIndicator">
+            <strong>Prêt à commencer</strong>
+          </div>
+          
+          <div class="status-display">
+            <div class="status-icon" id="statusIcon">⏱️</div>
+            <div class="status-text" id="statusText">En attente</div>
+            <div class="elapsed-time" id="elapsedTime"></div>
+          </div>
+          
+          <div class="controls" id="initialControls">
+            <button id="start" class="btn-primary">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Démarrer l'entraînement
+            </button>
+          </div>
+
+          <div class="controls" id="runningControls" style="display:none">
+            <button id="stop" class="btn-danger">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="6" width="12" height="12"/>
+              </svg>
+              Arrêter l'entraînement
+            </button>
+          </div>
+
+          <div class="questionnaire" id="questionnaire">
+            <h3>💬 Comment s'est passé l'entraînement ?</h3>
+            <div class="questionnaire-buttons">
+              <button class="btn-success" id="btnSuccess">
+                ✅ Tenu jusqu'au bout
+              </button>
+              <button class="btn-danger" id="btnFailed">
+                ❌ Abandonné avant
+              </button>
+              <button class="btn-warning" id="btnPartial">
+                ⚠️ Tenu partiellement
+              </button>
+              <button class="btn-secondary" id="btnSkip">
+                ⏭️ Ne pas partager
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Sessions totales</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statLast">—</div>
+            <div class="stat-label">Dernière durée</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statSuccess">0%</div>
+            <div class="stat-label">Taux de réussite</div>
+          </div>
+        </div>
+
+        <div class="settings" style="margin-top:20px">
+          <div class="setting-group">
+            <label>Plage de durée (heures)</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input type="number" id="minHours" value="2" min="0.5" max="24" step="0.5" style="width:80px"/>
+              <span style="color:#64748b">à</span>
+              <input type="number" id="maxHours" value="9" min="0.5" max="24" step="0.5" style="width:80px"/>
+              <span style="color:#64748b;font-size:13px">heures</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>Numéro destinataire (format international, sans +)</label>
+            <input type="text" id="phone" value="33783204184" placeholder="337..." />
+          </div>
+
+          <div class="setting-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeDate" checked/>
+              <span>Inclure la date et l'heure</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="soundAlert" checked/>
+              <span>Signal sonore à la fin</span>
+            </label>
+          </div>
+
+          <div class="setting-group">
+            <label>Aperçu du message</label>
+            <textarea id="message" readonly></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="instructions">
+          <h3>📋 Instructions</h3>
+          <ul>
+            <li><strong>Étape 1:</strong> Cliquez sur "Démarrer" pour lancer l'entraînement</li>
+            <li><strong>Étape 2:</strong> Une durée aléatoire (2h-9h) est générée mais <strong>reste cachée</strong></li>
+            <li><strong>Étape 3:</strong> Tenez la garde debout devant la porte</li>
+            <li><strong>Étape 4:</strong> Un bip sonore vous signale la fin</li>
+            <li><strong>Étape 5:</strong> Répondez au questionnaire</li>
+            <li><strong>Étape 6:</strong> WhatsApp s'ouvre avec votre résultat</li>
+          </ul>
+        </div>
+
+        <div class="instructions" style="margin-top:16px">
+          <h3>💡 Conseils</h3>
+          <ul>
+            <li>Trouvez une position confortable et stable</li>
+            <li>Gardez le dos droit, épaules relâchées</li>
+            <li>Respirez calmement et régulièrement</li>
+            <li>Bougez légèrement pour éviter les crampes</li>
+            <li>Hydratez-vous avant de commencer</li>
+            <li>Portez des chaussures confortables</li>
+          </ul>
+        </div>
+
+        <div class="instructions" style="margin-top:16px">
+          <h3>📊 Résultats</h3>
+          <ul>
+            <li><strong>✅ Tenu jusqu'au bout:</strong> Garde complète réussie</li>
+            <li><strong>❌ Abandonné avant:</strong> Arrêt avant le signal</li>
+            <li><strong>⚠️ Tenu partiellement:</strong> Avec quelques pauses</li>
+            <li><strong>⏭️ Ne pas partager:</strong> Session d'essai</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Guard-Trainer v1.0 — Développez votre endurance 💪
+    </footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const stats = {
+      total: 0,
+      successes: 0,
+      durations: []
+    };
+
+    let targetDuration = 0;
+    let startTime = 0;
+    let timerInterval = null;
+    let audioContext = null;
+
+    function randomDuration(minHours, maxHours){
+      const minMs = minHours * 3600000;
+      const maxMs = maxHours * 3600000;
+      return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    }
+
+    function formatDuration(ms){
+      const hours = Math.floor(ms / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      return `${hours}h ${minutes.toString().padStart(2,'0')}m ${seconds.toString().padStart(2,'0')}s`;
+    }
+
+    function formatDurationShort(ms){
+      const hours = Math.floor(ms / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      if(hours > 0 && minutes > 0) return `${hours}h${minutes}m`;
+      if(hours > 0) return `${hours}h`;
+      return `${minutes}m`;
+    }
+
+    const statusIcon = document.getElementById('statusIcon');
+    const statusText = document.getElementById('statusText');
+    const elapsedTime = document.getElementById('elapsedTime');
+    const msgEl = document.getElementById('message');
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+    const initialControls = document.getElementById('initialControls');
+    const runningControls = document.getElementById('runningControls');
+    const questionnaire = document.getElementById('questionnaire');
+    const phaseIndicator = document.getElementById('phaseIndicator');
+    const soundAlert = document.getElementById('soundAlert');
+    const includeDate = document.getElementById('includeDate');
+    const phoneInput = document.getElementById('phone');
+    const minHoursInput = document.getElementById('minHours');
+    const maxHoursInput = document.getElementById('maxHours');
+    const statTotal = document.getElementById('statTotal');
+    const statLast = document.getElementById('statLast');
+    const statSuccess = document.getElementById('statSuccess');
+
+    const btnSuccess = document.getElementById('btnSuccess');
+    const btnFailed = document.getElementById('btnFailed');
+    const btnPartial = document.getElementById('btnPartial');
+    const btnSkip = document.getElementById('btnSkip');
+
+    function showToast(message){
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function updateStats(duration, success){
+      stats.total++;
+      if(success) stats.successes++;
+      stats.durations.push(duration);
+      
+      statTotal.textContent = stats.total;
+      statLast.textContent = formatDurationShort(duration);
+      
+      const successRate = stats.total > 0 ? Math.round((stats.successes / stats.total) * 100) : 0;
+      statSuccess.textContent = successRate + '%';
+    }
+
+    function buildMessage(duration, result, wasCompleted){
+      let msg = `🚪 Entraînement garde debout\n`;
+      msg += `Durée prévue : ${formatDuration(duration)}\n`;
+      msg += `Résultat : ${result}\n`;
+      
+      if(includeDate.checked){
+        const date = new Date();
+        const dateStr = date.toLocaleString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        msg += `📅 ${dateStr}\n`;
+      }
+      
+      msg += `\n(Envoyé via Guard-Trainer)`;
+      return msg;
+    }
+
+    function openWhatsApp(phone, text){
+      const encoded = encodeURIComponent(text);
+      const waLink = `https://wa.me/${phone}?text=${encoded}`;
+      window.open(waLink, '_blank');
+    }
+
+    function playBeep(){
+      if(!soundAlert.checked) return;
+      
+      try{
+        if(!audioContext){
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+        
+        setTimeout(() => {
+          const osc2 = audioContext.createOscillator();
+          const gain2 = audioContext.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioContext.destination);
+          osc2.frequency.value = 1000;
+          osc2.type = 'sine';
+          gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          osc2.start(audioContext.currentTime);
+          osc2.stop(audioContext.currentTime + 0.5);
+        }, 200);
+        
+      }catch(e){
+        console.error('Audio error:', e);
+      }
+    }
+
+    function updateElapsedTime(){
+      const elapsed = Date.now() - startTime;
+      elapsedTime.textContent = formatDuration(elapsed);
+    }
+
+    function startTraining(){
+      const min = parseFloat(minHoursInput.value);
+      const max = parseFloat(maxHoursInput.value);
+      
+      if(min >= max){
+        showToast('⚠️ Le minimum doit être inférieur au maximum');
+        return;
+      }
+      
+      targetDuration = randomDuration(min, max);
+      startTime = Date.now();
+      
+      initialControls.style.display = 'none';
+      runningControls.style.display = 'flex';
+      
+      statusIcon.textContent = '🚪';
+      statusText.textContent = 'En garde...';
+      phaseIndicator.innerHTML = '<strong>Entraînement en cours</strong> — Tenez la position !';
+      phaseIndicator.classList.add('waiting');
+      
+      timerInterval = setInterval(() => {
+        updateElapsedTime();
+        
+        if(Date.now() - startTime >= targetDuration){
+          endTraining();
+        }
+      }, 1000);
+      
+      showToast('🚀 Entraînement démarré — Bonne garde !');
+    }
+
+    function endTraining(){
+      clearInterval(timerInterval);
+      
+      playBeep();
+      
+      statusIcon.textContent = '🔔';
+      statusText.textContent = 'Temps écoulé !';
+      phaseIndicator.classList.remove('waiting');
+      phaseIndicator.classList.add('active');
+      phaseIndicator.innerHTML = '<strong>Session terminée</strong> — Comment s\'est-elle passée ?';
+      
+      runningControls.style.display = 'none';
+      questionnaire.classList.add('active');
+      
+      showToast('⏰ Signal de fin — Bravo !');
+    }
+
+    function stopTraining(){
+      if(confirm('Êtes-vous sûr de vouloir arrêter l\'entraînement ?')){
+        clearInterval(timerInterval);
+        
+        statusIcon.textContent = '🛑';
+        statusText.textContent = 'Arrêté';
+        phaseIndicator.classList.remove('waiting');
+        phaseIndicator.classList.add('active');
+        phaseIndicator.innerHTML = '<strong>Session interrompue</strong> — Comment s\'est-elle passée ?';
+        
+        runningControls.style.display = 'none';
+        questionnaire.classList.add('active');
+        
+        showToast('⏸️ Entraînement arrêté');
+      }
+    }
+
+    function resetToInitial(){
+      initialControls.style.display = 'flex';
+      runningControls.style.display = 'none';
+      questionnaire.classList.remove('active');
+      phaseIndicator.classList.remove('active', 'waiting');
+      phaseIndicator.innerHTML = '<strong>Prêt à commencer</strong>';
+      
+      statusIcon.textContent = '⏱️';
+      statusText.textContent = 'En attente';
+      elapsedTime.textContent = '';
+    }
+
+    function handleResult(resultEmoji, resultText, wasSuccess){
+      const message = buildMessage(targetDuration, resultEmoji + ' ' + resultText, wasSuccess);
+      msgEl.value = message;
+
+      updateStats(targetDuration, wasSuccess);
+
+      const phone = phoneInput.value.trim();
+      if(!phone){
+        showToast('⚠️ Veuillez renseigner un numéro de téléphone');
+        return;
+      }
+
+      showToast('📱 Ouverture de WhatsApp...');
+      setTimeout(() => {
+        openWhatsApp(phone, message);
+        resetToInitial();
+      }, 500);
+    }
+
+    startBtn.addEventListener('click', startTraining);
+    stopBtn.addEventListener('click', stopTraining);
+
+    btnSuccess.addEventListener('click', () => handleResult('✅', 'Tenu jusqu\'au bout', true));
+    btnFailed.addEventListener('click', () => handleResult('❌', 'Abandonné avant', false));
+    btnPartial.addEventListener('click', () => handleResult('⚠️', 'Tenu partiellement', false));
+    
+    btnSkip.addEventListener('click', () => {
+      showToast('⏭️ Session non partagée');
+      resetToInitial();
+    });
+
+    [minHoursInput, maxHoursInput].forEach(input => {
+      input.addEventListener('change', () => {
+        input.value = Math.max(parseFloat(input.min), Math.min(parseFloat(input.max), parseFloat(input.value)));
+      });
+    });
+  </script>
+</body>
+</html>
