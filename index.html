@@ -253,6 +253,8 @@
     let timerInterval = null;
     let audioContext = null;
     let wakeLock = null;
+    let audioElement = null;
+    let audioBuffer = null;
 
     function randomDuration(minHours, maxHours){
       const minMs = minHours * 3600000;
@@ -305,6 +307,36 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
+    function generateAudioBuffer(){
+      if(!audioContext){
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const sampleRate = audioContext.sampleRate;
+      const duration = 5.5;
+      const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for(let repeat = 0; repeat < 5; repeat++){
+        const startSample = Math.floor(repeat * sampleRate);
+        
+        for(let i = 0; i < sampleRate * 0.5; i++){
+          const t = i / sampleRate;
+          data[startSample + i] = Math.sin(2 * Math.PI * 800 * t) * 0.3 * Math.exp(-t * 2);
+        }
+        
+        const secondBeepStart = startSample + Math.floor(sampleRate * 0.2);
+        for(let i = 0; i < sampleRate * 0.5; i++){
+          const t = i / sampleRate;
+          if(secondBeepStart + i < data.length){
+            data[secondBeepStart + i] = Math.sin(2 * Math.PI * 1000 * t) * 0.3 * Math.exp(-t * 2);
+          }
+        }
+      }
+      
+      return buffer;
+    }
+
     function updateStats(duration, success){
       stats.total++;
       if(success) stats.successes++;
@@ -352,52 +384,43 @@
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // Reprendre le contexte audio s'il est suspendu (iOS)
         if(audioContext.state === 'suspended'){
           audioContext.resume();
         }
         
-        // Joue 5 séries de double bips
-        for(let i = 0; i < 5; i++){
-          setTimeout(() => {
-            const now = audioContext.currentTime;
-            
-            // Premier bip
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            
-            oscillator.start(now);
-            oscillator.stop(now + 0.5);
-            
-            // Deuxième bip
-            setTimeout(() => {
-              const now2 = audioContext.currentTime;
-              const osc2 = audioContext.createOscillator();
-              const gain2 = audioContext.createGain();
-              osc2.connect(gain2);
-              gain2.connect(audioContext.destination);
-              osc2.frequency.value = 1000;
-              osc2.type = 'sine';
-              gain2.gain.setValueAtTime(0.3, now2);
-              gain2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.5);
-              osc2.start(now2);
-              osc2.stop(now2 + 0.5);
-            }, 200);
-          }, i * 1000);
+        if(!audioBuffer){
+          audioBuffer = generateAudioBuffer();
         }
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
         
       }catch(e){
         console.error('Audio error:', e);
+        fallbackBeep();
       }
+    }
+
+    function fallbackBeep(){
+      if(!audioElement){
+        audioElement = new Audio();
+      }
+      
+      const beepDataUrl = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+      audioElement.src = beepDataUrl;
+      audioElement.volume = 0.5;
+      
+      let playCount = 0;
+      const playNext = () => {
+        if(playCount < 5){
+          audioElement.play().catch(e => console.error('Fallback audio error:', e));
+          playCount++;
+          setTimeout(playNext, 1000);
+        }
+      };
+      playNext();
     }
 
     function testSound(){
@@ -406,54 +429,25 @@
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // Reprendre le contexte audio s'il est suspendu (iOS)
         if(audioContext.state === 'suspended'){
           audioContext.resume();
         }
         
         showToast('🔊 Test du signal sonore...');
         
-        // Joue 5 séries de double bips (identique à playBeep)
-        for(let i = 0; i < 5; i++){
-          setTimeout(() => {
-            const now = audioContext.currentTime;
-            
-            // Premier bip
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            
-            oscillator.start(now);
-            oscillator.stop(now + 0.5);
-            
-            // Deuxième bip
-            setTimeout(() => {
-              const now2 = audioContext.currentTime;
-              const osc2 = audioContext.createOscillator();
-              const gain2 = audioContext.createGain();
-              osc2.connect(gain2);
-              gain2.connect(audioContext.destination);
-              osc2.frequency.value = 1000;
-              osc2.type = 'sine';
-              gain2.gain.setValueAtTime(0.3, now2);
-              gain2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.5);
-              osc2.start(now2);
-              osc2.stop(now2 + 0.5);
-            }, 200);
-          }, i * 1000);
+        if(!audioBuffer){
+          audioBuffer = generateAudioBuffer();
         }
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
         
       }catch(e){
         console.error('Audio error:', e);
-        showToast('❌ Erreur audio — Vérifiez vos paramètres');
+        showToast('⚠️ Utilisation du mode audio alternatif');
+        fallbackBeep();
       }
     }
 
@@ -611,4 +605,3 @@
   </script>
 </body>
 </html>
-
