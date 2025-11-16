@@ -158,16 +158,6 @@
 
         <div class="settings" style="margin-top:20px">
           <div class="setting-group">
-            <label>Plage de durée (heures)</label>
-            <div style="display:flex;gap:10px;align-items:center">
-              <input type="number" id="minHours" value="2" min="0.5" max="24" step="0.5" style="width:80px"/>
-              <span style="color:#64748b">à</span>
-              <input type="number" id="maxHours" value="9" min="0.5" max="24" step="0.5" style="width:80px"/>
-              <span style="color:#64748b;font-size:13px">heures</span>
-            </div>
-          </div>
-
-          <div class="setting-group">
             <label>Numéro destinataire (format international, sans +)</label>
             <input type="text" id="phone" value="33783204184" placeholder="337..." />
           </div>
@@ -197,13 +187,14 @@
             <li><strong>🔌 Branchez votre téléphone</strong> — L'entraînement peut durer jusqu'à 9h</li>
             <li><strong>🔊 Vérifiez le son</strong> — Utilisez le bouton "Tester le son" ci-dessous</li>
             <li><strong>📱 Volume suffisant</strong> — Assurez-vous d'entendre le signal de fin</li>
+            <li><strong>🔔 Signal sonore</strong> — 5 séries de double bips pour être sûr de l'entendre</li>
           </ul>
           <button id="testSound" class="btn-warning" style="width:100%;margin-top:12px">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
             </svg>
-            🔊 Tester le son
+            🔊 Tester le son (5 bips)
           </button>
         </div>
 
@@ -297,8 +288,6 @@
     const soundAlert = document.getElementById('soundAlert');
     const includeDate = document.getElementById('includeDate');
     const phoneInput = document.getElementById('phone');
-    const minHoursInput = document.getElementById('minHours');
-    const maxHoursInput = document.getElementById('maxHours');
     const statTotal = document.getElementById('statTotal');
     const statLast = document.getElementById('statLast');
     const statSuccess = document.getElementById('statSuccess');
@@ -363,33 +352,40 @@
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-        
-        setTimeout(() => {
-          const osc2 = audioContext.createOscillator();
-          const gain2 = audioContext.createGain();
-          osc2.connect(gain2);
-          gain2.connect(audioContext.destination);
-          osc2.frequency.value = 1000;
-          osc2.type = 'sine';
-          gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-          osc2.start(audioContext.currentTime);
-          osc2.stop(audioContext.currentTime + 0.5);
-        }, 200);
+        // Joue 5 séries de double bips
+        for(let i = 0; i < 5; i++){
+          setTimeout(() => {
+            // Premier bip
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+            
+            // Deuxième bip
+            setTimeout(() => {
+              const osc2 = audioContext.createOscillator();
+              const gain2 = audioContext.createGain();
+              osc2.connect(gain2);
+              gain2.connect(audioContext.destination);
+              osc2.frequency.value = 1000;
+              osc2.type = 'sine';
+              gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+              gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+              osc2.start(audioContext.currentTime);
+              osc2.stop(audioContext.currentTime + 0.5);
+            }, 200);
+          }, i * 1000); // 1 seconde entre chaque série
+        }
         
       }catch(e){
         console.error('Audio error:', e);
@@ -468,17 +464,12 @@
     }
 
     async function startTraining(){
-      const min = parseFloat(minHoursInput.value);
-      const max = parseFloat(maxHoursInput.value);
-      
-      if(min >= max){
-        showToast('⚠️ Le minimum doit être inférieur au maximum');
-        return;
-      }
+      const minHours = 2;
+      const maxHours = 9;
       
       await requestWakeLock();
       
-      targetDuration = randomDuration(min, max);
+      targetDuration = randomDuration(minHours, maxHours);
       startTime = Date.now();
       
       initialControls.style.display = 'none';
@@ -580,12 +571,6 @@
       resetToInitial();
     });
 
-    [minHoursInput, maxHoursInput].forEach(input => {
-      input.addEventListener('change', () => {
-        input.value = Math.max(parseFloat(input.min), Math.min(parseFloat(input.max), parseFloat(input.value)));
-      });
-    });
-
     // Réactiver le Wake Lock si l'utilisateur revient sur la page
     document.addEventListener('visibilitychange', async () => {
       if(wakeLock !== null && document.visibilityState === 'visible'){
@@ -595,4 +580,5 @@
   </script>
 </body>
 </html>
+
 
