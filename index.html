@@ -84,9 +84,57 @@
       0%,100%{opacity:1}
       50%{opacity:.7}
     }
+    .alert-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ef4444;
+      z-index: 9999;
+      display: none;
+      animation: flash 0.5s ease-in-out infinite;
+    }
+    .alert-flash.active {
+      display: block;
+    }
+    @keyframes flash {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.9; }
+    }
+    .alert-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      color: #000;
+      padding: 40px;
+      border-radius: 20px;
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      z-index: 10000;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .alert-message.active {
+      display: block;
+      animation: bounce 0.5s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
   </style>
 </head>
 <body>
+  <div class="alert-flash" id="alertFlash"></div>
+  <div class="alert-message" id="alertMessage">
+    🔔 TEMPS ÉCOULÉ ! 🔔<br>
+    <span style="font-size:24px">Appuyez pour arrêter</span>
+  </div>
+  
   <main class="card">
     <h1>🚪 Entraînement garde debout</h1>
     <p>Génère une durée aléatoire entre 2h et 9h. Tenez la position jusqu'au signal sonore !</p>
@@ -187,14 +235,15 @@
             <li><strong>🔌 Branchez votre téléphone</strong> — L'entraînement peut durer jusqu'à 9h</li>
             <li><strong>🔊 Vérifiez le son</strong> — Utilisez le bouton "Tester le son" ci-dessous</li>
             <li><strong>📱 Volume suffisant</strong> — Assurez-vous d'entendre le signal de fin</li>
-            <li><strong>🔔 Signal sonore</strong> — 5 séries de double bips pour être sûr de l'entendre</li>
+            <li><strong>🔔 Signal de fin multiple :</strong> Son + Vibration + Flash visuel rouge</li>
+            <li><strong>📲 iPhone :</strong> Le son peut ne pas fonctionner, mais la vibration et le flash rouge oui !</li>
           </ul>
           <button id="testSound" class="btn-warning" style="width:100%;margin-top:12px">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
             </svg>
-            🔊 Tester le son (5 bips)
+            🔊 Tester TOUT (son + vibration + flash)
           </button>
         </div>
 
@@ -299,6 +348,8 @@
     const btnPartial = document.getElementById('btnPartial');
     const btnSkip = document.getElementById('btnSkip');
     const testSoundBtn = document.getElementById('testSound');
+    const alertFlash = document.getElementById('alertFlash');
+    const alertMessage = document.getElementById('alertMessage');
 
     function showToast(message){
       const toast = document.getElementById('toast');
@@ -403,6 +454,28 @@
       }
     }
 
+    function vibrate(){
+      if('vibrate' in navigator){
+        const pattern = [200, 100, 200, 100, 200, 300, 200, 100, 200, 100, 200];
+        for(let i = 0; i < 5; i++){
+          setTimeout(() => navigator.vibrate(pattern), i * 2000);
+        }
+      }
+    }
+
+    function showVisualAlert(){
+      alertFlash.classList.add('active');
+      alertMessage.classList.add('active');
+      
+      alertMessage.addEventListener('click', stopVisualAlert);
+      alertFlash.addEventListener('click', stopVisualAlert);
+    }
+
+    function stopVisualAlert(){
+      alertFlash.classList.remove('active');
+      alertMessage.classList.remove('active');
+    }
+
     function fallbackBeep(){
       if(!audioElement){
         audioElement = new Audio();
@@ -433,8 +506,9 @@
           audioContext.resume();
         }
         
-        showToast('🔊 Test du signal sonore...');
+        showToast('🔊 Test complet : Son + Vibration + Flash');
         
+        // Test du son
         if(!audioBuffer){
           audioBuffer = generateAudioBuffer();
         }
@@ -444,10 +518,17 @@
         source.connect(audioContext.destination);
         source.start(0);
         
+        // Test de la vibration
+        vibrate();
+        
+        // Test du flash visuel
+        showVisualAlert();
+        
       }catch(e){
         console.error('Audio error:', e);
-        showToast('⚠️ Utilisation du mode audio alternatif');
-        fallbackBeep();
+        showToast('⚠️ Son non disponible, mais vibration + flash activés');
+        vibrate();
+        showVisualAlert();
       }
     }
 
@@ -521,6 +602,8 @@
       releaseWakeLock();
       
       playBeep();
+      vibrate();
+      showVisualAlert();
       
       statusIcon.textContent = '🔔';
       statusText.textContent = 'Temps écoulé !';
@@ -553,6 +636,7 @@
     }
 
     function resetToInitial(){
+      stopVisualAlert();
       initialControls.style.display = 'flex';
       runningControls.style.display = 'none';
       questionnaire.classList.remove('active');
