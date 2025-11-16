@@ -192,6 +192,22 @@
 
       <div>
         <div class="instructions">
+          <h3>⚠️ Avant de commencer</h3>
+          <ul>
+            <li><strong>🔌 Branchez votre téléphone</strong> — L'entraînement peut durer jusqu'à 9h</li>
+            <li><strong>🔊 Vérifiez le son</strong> — Utilisez le bouton "Tester le son" ci-dessous</li>
+            <li><strong>📱 Volume suffisant</strong> — Assurez-vous d'entendre le signal de fin</li>
+          </ul>
+          <button id="testSound" class="btn-warning" style="width:100%;margin-top:12px">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+            🔊 Tester le son
+          </button>
+        </div>
+
+        <div class="instructions" style="margin-top:16px">
           <h3>📋 Instructions</h3>
           <ul>
             <li><strong>Étape 1:</strong> Cliquez sur "Démarrer" pour lancer l'entraînement</li>
@@ -291,6 +307,7 @@
     const btnFailed = document.getElementById('btnFailed');
     const btnPartial = document.getElementById('btnPartial');
     const btnSkip = document.getElementById('btnSkip');
+    const testSoundBtn = document.getElementById('testSound');
 
     function showToast(message){
       const toast = document.getElementById('toast');
@@ -376,6 +393,48 @@
         
       }catch(e){
         console.error('Audio error:', e);
+      }
+    }
+
+    function testSound(){
+      try{
+        if(!audioContext){
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        showToast('🔊 Test du signal sonore...');
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+        
+        setTimeout(() => {
+          const osc2 = audioContext.createOscillator();
+          const gain2 = audioContext.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioContext.destination);
+          osc2.frequency.value = 1000;
+          osc2.type = 'sine';
+          gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          osc2.start(audioContext.currentTime);
+          osc2.stop(audioContext.currentTime + 0.5);
+        }, 200);
+        
+      }catch(e){
+        console.error('Audio error:', e);
+        showToast('❌ Erreur audio — Vérifiez vos paramètres');
       }
     }
 
@@ -510,6 +569,7 @@
 
     startBtn.addEventListener('click', startTraining);
     stopBtn.addEventListener('click', stopTraining);
+    testSoundBtn.addEventListener('click', testSound);
 
     btnSuccess.addEventListener('click', () => handleResult('✅', 'Tenu jusqu\'au bout', true));
     btnFailed.addEventListener('click', () => handleResult('❌', 'Abandonné avant', false));
@@ -535,3 +595,4 @@
   </script>
 </body>
 </html>
+
