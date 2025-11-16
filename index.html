@@ -228,7 +228,7 @@
     </div>
 
     <footer>
-      Guard-Trainer v1.0 — Développez votre endurance 💪
+      Guard-Trainer v1.1 — Développez votre endurance 💪 | 🔒 Anti-veille activé
     </footer>
   </main>
 
@@ -245,6 +245,7 @@
     let startTime = 0;
     let timerInterval = null;
     let audioContext = null;
+    let wakeLock = null;
 
     function randomDuration(minHours, maxHours){
       const minMs = minHours * 3600000;
@@ -378,12 +379,36 @@
       }
     }
 
+    async function requestWakeLock(){
+      try{
+        if('wakeLock' in navigator){
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => {
+            console.log('Wake Lock released');
+          });
+          showToast('🔒 Écran maintenu actif');
+        } else {
+          showToast('⚠️ Blocage de veille non supporté');
+        }
+      }catch(err){
+        console.error('Wake Lock error:', err);
+        showToast('⚠️ Impossible de bloquer la veille');
+      }
+    }
+
+    function releaseWakeLock(){
+      if(wakeLock){
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
     function updateElapsedTime(){
       const elapsed = Date.now() - startTime;
       elapsedTime.textContent = formatDuration(elapsed);
     }
 
-    function startTraining(){
+    async function startTraining(){
       const min = parseFloat(minHoursInput.value);
       const max = parseFloat(maxHoursInput.value);
       
@@ -391,6 +416,8 @@
         showToast('⚠️ Le minimum doit être inférieur au maximum');
         return;
       }
+      
+      await requestWakeLock();
       
       targetDuration = randomDuration(min, max);
       startTime = Date.now();
@@ -416,6 +443,7 @@
 
     function endTraining(){
       clearInterval(timerInterval);
+      releaseWakeLock();
       
       playBeep();
       
@@ -434,6 +462,7 @@
     function stopTraining(){
       if(confirm('Êtes-vous sûr de vouloir arrêter l\'entraînement ?')){
         clearInterval(timerInterval);
+        releaseWakeLock();
         
         statusIcon.textContent = '🛑';
         statusText.textContent = 'Arrêté';
@@ -495,6 +524,13 @@
       input.addEventListener('change', () => {
         input.value = Math.max(parseFloat(input.min), Math.min(parseFloat(input.max), parseFloat(input.value)));
       });
+    });
+
+    // Réactiver le Wake Lock si l'utilisateur revient sur la page
+    document.addEventListener('visibilitychange', async () => {
+      if(wakeLock !== null && document.visibilityState === 'visible'){
+        await requestWakeLock();
+      }
     });
   </script>
 </body>
