@@ -135,6 +135,10 @@
     <span style="font-size:24px">Appuyez pour arrêter</span>
   </div>
   
+  <audio id="beepAudio" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+  </audio>
+  
   <main class="card">
     <h1>🚪 Entraînement garde debout</h1>
     <p>Génère une durée aléatoire entre 2h et 9h. Tenez la position jusqu'au signal sonore !</p>
@@ -350,6 +354,7 @@
     const testSoundBtn = document.getElementById('testSound');
     const alertFlash = document.getElementById('alertFlash');
     const alertMessage = document.getElementById('alertMessage');
+    const beepAudio = document.getElementById('beepAudio');
 
     function showToast(message){
       const toast = document.getElementById('toast');
@@ -430,6 +435,31 @@
     function playBeep(){
       if(!soundAlert.checked) return;
       
+      // Essayer de jouer le son avec l'élément audio HTML5
+      beepAudio.currentTime = 0;
+      beepAudio.play().then(() => {
+        // Son joué avec succès
+        console.log('Audio joué via HTML5');
+        
+        // Rejouer 4 fois de plus (total 5 fois)
+        let playCount = 1;
+        const interval = setInterval(() => {
+          if(playCount < 5){
+            beepAudio.currentTime = 0;
+            beepAudio.play();
+            playCount++;
+          } else {
+            clearInterval(interval);
+          }
+        }, 2000);
+      }).catch(error => {
+        console.error('Erreur audio HTML5:', error);
+        // Fallback vers Web Audio API
+        fallbackWebAudio();
+      });
+    }
+
+    function fallbackWebAudio(){
       try{
         if(!audioContext){
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -447,10 +477,8 @@
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
         source.start(0);
-        
       }catch(e){
-        console.error('Audio error:', e);
-        fallbackBeep();
+        console.error('Fallback audio error:', e);
       }
     }
 
@@ -477,59 +505,40 @@
     }
 
     function fallbackBeep(){
-      if(!audioElement){
-        audioElement = new Audio();
-      }
-      
-      const beepDataUrl = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-      audioElement.src = beepDataUrl;
-      audioElement.volume = 0.5;
-      
-      let playCount = 0;
-      const playNext = () => {
-        if(playCount < 5){
-          audioElement.play().catch(e => console.error('Fallback audio error:', e));
-          playCount++;
-          setTimeout(playNext, 1000);
-        }
-      };
-      playNext();
+      // Cette fonction n'est plus utilisée mais gardée pour compatibilité
+      console.log('Fallback beep appelé');
     }
 
     function testSound(){
-      try{
-        if(!audioContext){
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
+      showToast('🔊 Test complet : Son + Vibration + Flash');
+      
+      // Test du son HTML5
+      beepAudio.currentTime = 0;
+      beepAudio.play().then(() => {
+        console.log('Test audio réussi');
         
-        if(audioContext.state === 'suspended'){
-          audioContext.resume();
-        }
-        
-        showToast('🔊 Test complet : Son + Vibration + Flash');
-        
-        // Test du son
-        if(!audioBuffer){
-          audioBuffer = generateAudioBuffer();
-        }
-        
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-        
-        // Test de la vibration
-        vibrate();
-        
-        // Test du flash visuel
-        showVisualAlert();
-        
-      }catch(e){
-        console.error('Audio error:', e);
+        // Rejouer 4 fois de plus (total 5 fois)
+        let playCount = 1;
+        const interval = setInterval(() => {
+          if(playCount < 5){
+            beepAudio.currentTime = 0;
+            beepAudio.play();
+            playCount++;
+          } else {
+            clearInterval(interval);
+          }
+        }, 2000);
+      }).catch(error => {
+        console.error('Test audio échoué:', error);
         showToast('⚠️ Son non disponible, mais vibration + flash activés');
-        vibrate();
-        showVisualAlert();
-      }
+        fallbackWebAudio();
+      });
+      
+      // Test de la vibration
+      vibrate();
+      
+      // Test du flash visuel
+      showVisualAlert();
     }
 
     async function requestWakeLock(){
@@ -564,6 +573,12 @@
     async function startTraining(){
       const minHours = 2;
       const maxHours = 9;
+      
+      // Initialiser l'audio pour iPhone (interaction utilisateur nécessaire)
+      beepAudio.play().then(() => {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
+      }).catch(e => console.log('Audio pre-init:', e));
       
       // Initialiser et débloquer l'audio pour iOS
       if(!audioContext){
