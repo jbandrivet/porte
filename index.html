@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Garde Debout Strict v3.3</title>
+  <title>Entraînement Porte</title>
   <style>
     :root {
       --primary: #3b82f6; 
       --success: #10b981; 
       --danger: #ef4444; 
       --warning: #f59e0b;
+      --whatsapp: #25D366;
       --text-main: #e2e8f0; 
       --text-muted: #94a3b8;
     }
@@ -22,11 +23,10 @@
       min-height: 100vh; margin: 0;
       background: linear-gradient(135deg, #020617 0%, #1e293b 100%);
       color: var(--text-main); font-family: system-ui, -apple-system, sans-serif;
-      padding: 16px; 
-      overflow-x: hidden;
+      padding: 16px; overflow-x: hidden;
     }
 
-    /* Mode OLED / Économie */
+    /* Mode OLED */
     body.oled-mode { background: #000000; }
     body.oled-mode .card, body.oled-mode h1, body.oled-mode p { opacity: 0; pointer-events: none; }
     body.oled-mode .oled-overlay { display: flex; }
@@ -50,10 +50,9 @@
       padding-bottom: 40px;
     }
 
-    h1 { margin: 0 0 4px; font-size: 1.6rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p.subtitle { margin: 0 0 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
+    h1 { margin: 0 0 4px; font-size: 1.8rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.subtitle { margin: 0 0 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 
-    /* Layout */
     .status-display { 
         text-align: center; margin: 0 0 20px; padding: 20px; 
         border-radius: 16px; background: rgba(59, 130, 246, 0.05); 
@@ -62,13 +61,12 @@
     }
     
     .status-icon { font-size: 50px; display: block; margin-bottom: 5px; }
-    .status-text { font-size: 1.2rem; font-weight: 600; color: #60a5fa; margin-bottom: 4px; }
+    .status-text { font-size: 1.3rem; font-weight: 700; color: #60a5fa; margin-bottom: 4px; text-transform: uppercase; }
     .elapsed-time { font-family: monospace; font-size: 1.8rem; letter-spacing: 1px; color: var(--text-main); font-weight: 700; }
     
     @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
     .active-ring::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); animation: pulse-ring 2s infinite; pointer-events: none; }
 
-    /* Boutons */
     .btn-grid { display: flex; flex-direction: column; gap: 12px; }
     button {
       padding: 16px 20px; border-radius: 14px; border: none; cursor: pointer;
@@ -87,9 +85,19 @@
     .btn-night { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
     .btn-oled { background: #000; border: 1px solid #333; margin-top: 10px; }
     
+    /* BOUTON WHATSAPP */
+    .btn-whatsapp {
+        background: var(--whatsapp);
+        color: white;
+        font-size: 1.2rem;
+        padding: 20px;
+        animation: pulse-green 2s infinite;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
+
     .badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; margin-left: auto; }
 
-    /* Options & Settings */
     .settings-panel { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
     input[type=text] { width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px; color: white; margin-bottom: 12px; font-size: 1rem; }
     
@@ -134,13 +142,13 @@
 
 <div id="oledOverlay" class="oled-overlay">
   <div class="oled-touch-area" id="oledTouchArea"></div>
-  <div class="oled-icon">🛡️</div>
+  <div class="oled-icon">🚪</div>
   <p style="color: #444; margin-top: 20px;">Double-clic pour réveiller</p>
 </div>
 
 <main class="card">
-  <h1>🛡️ Garde Debout (Strict)</h1>
-  <p class="subtitle">v3.3 • Pas de pause • Rapport WhatsApp</p>
+  <h1>🚪 Entraînement Porte</h1>
+  <p class="subtitle">Discipline • Vigilance • Endurance</p>
 
   <div id="statusPanel" class="status-display">
     <div class="status-icon" id="statusIcon">⏱️</div>
@@ -175,29 +183,39 @@
         🌑 ÉTEINDRE ÉCRAN<br>
         <span style="font-size:0.8rem; font-weight:normal; color:#888; margin-top:5px">(Économie Batterie)</span>
     </button>
-    
-    <div style="text-align:center; color:#ef4444; font-size:0.8rem; margin:10px 0; opacity:0.8">⚠️ Mode Strict : Pause désactivée</div>
-
+    <div style="text-align:center; color:#ef4444; font-size:0.8rem; margin:10px 0; opacity:0.8; text-transform:uppercase">⚠️ Aucune Pause Autorisée</div>
     <button onclick="app.confirmStop()" class="btn-danger">🛑 Abandonner</button>
   </div>
 
   <div id="view-result" class="btn-grid hidden">
-    <p style="text-align:center; color:white; font-size:1.1rem">Résultat de la Garde ?</p>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-      <button onclick="app.finish(true)" class="btn-success" style="height:70px">✅ Réussi</button>
-      <button onclick="app.finish(false)" class="btn-danger" style="height:70px">❌ Échec</button>
+    
+    <div id="rating-area">
+        <p style="text-align:center; color:white; font-size:1.1rem">Résultat de la session ?</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:10px">
+        <button onclick="app.finish(true)" class="btn-success" style="height:70px">✅ Réussi</button>
+        <button onclick="app.finish(false)" class="btn-danger" style="height:70px">❌ Échec</button>
+        </div>
+        <button onclick="app.finish(null)" class="btn-secondary">⚠️ Ne pas noter</button>
     </div>
-    <button onclick="app.finish(null)" class="btn-secondary">⚠️ Partiel / Ne pas noter</button>
+
+    <div id="whatsapp-area" class="hidden" style="margin-top:20px; animation: fadeIn 0.5s">
+        <p style="text-align:center; color:#25D366; margin-bottom:10px">✅ Résultat enregistré</p>
+        <button onclick="app.triggerWhatsapp()" class="btn-whatsapp">
+            📲 ENVOYER LE RAPPORT<br>
+            <span style="font-size:0.8rem">Cliquer pour ouvrir WhatsApp</span>
+        </button>
+        <button onclick="app.checkNightOption()" class="btn-secondary" style="margin-top:10px">Continuer sans envoyer</button>
+    </div>
   </div>
 
   <div id="view-night" class="btn-grid hidden">
-    <div style="text-align:center; margin-bottom:15px; color:#a78bfa">Garde longue détectée.<br>Voulez-vous enchaîner ?</div>
+    <div style="text-align:center; margin-bottom:15px; color:#a78bfa">Session longue détectée.<br>Enchaîner ?</div>
     <button onclick="app.startNightSession()" class="btn-night">🌙 Lancer Nocturne (1-3h)</button>
-    <button onclick="app.resetUI()" class="btn-secondary">🏁 Non, terminer la séance</button>
+    <button onclick="app.resetUI()" class="btn-secondary">🏁 Non, terminer</button>
   </div>
 
   <div class="settings-panel">
-    <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp (sans +)</label>
+    <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp</label>
     <input type="text" id="phoneInput" value="33683204184" onchange="app.saveSettings()">
     
     <div class="checkbox-row">
@@ -237,15 +255,11 @@ const SoundEngine = {
     osc.start(startTime);
     osc.stop(startTime + duration);
   },
-  // ALARME 5 BIPS (Garde)
   playAlarmSequence() {
     this.init();
     const now = this.ctx.currentTime;
-    for(let i=0; i<5; i++) {
-        this.beep(now + i, 0.4, 880); 
-    }
+    for(let i=0; i<5; i++) { this.beep(now + i, 0.4, 880); }
   },
-  // SIGNAL 2 BIPS (Transition)
   playDoubleBeep() {
     this.init();
     const now = this.ctx.currentTime;
@@ -255,7 +269,7 @@ const SoundEngine = {
 };
 
 /**
- * LOGIC v3.3 (NO PAUSE)
+ * LOGIC v3.5
  */
 const app = {
   state: {
@@ -268,7 +282,8 @@ const app = {
     wakeLock: null,
     alarmInt: null,
     settings: { phone: '33683204184', sound: true, vib: true, date: true, warmup: false, stretch: false },
-    stats: { total: 0, success: 0, lastDur: 0 }
+    stats: { total: 0, success: 0, lastDur: 0 },
+    lastResult: null 
   },
   
   els: {
@@ -297,7 +312,9 @@ const app = {
         title: document.getElementById('alertTitle'),
         msg: document.getElementById('alertMsg')
     },
-    oled: document.getElementById('oledOverlay')
+    oled: document.getElementById('oledOverlay'),
+    waArea: document.getElementById('whatsapp-area'),
+    ratingArea: document.getElementById('rating-area')
   },
 
   init() {
@@ -324,12 +341,12 @@ const app = {
       stretch: this.els.inputs.stretch.checked,
       stats: this.state.stats
     };
-    localStorage.setItem('gd_settings_v3_3', JSON.stringify(s));
+    localStorage.setItem('gd_settings_v3_4', JSON.stringify(s));
     this.state.settings = s;
   },
 
   loadSettings() {
-    const data = localStorage.getItem('gd_settings_v3_3');
+    const data = localStorage.getItem('gd_settings_v3_4');
     if(data) {
       const s = JSON.parse(data);
       if(s.phone) this.els.inputs.phone.value = s.phone;
@@ -386,7 +403,6 @@ const app = {
   },
 
   tick() {
-    // PLUS DE PAUSE ICI
     const now = Date.now();
     this.state.elapsed = now - this.state.startTime;
     this.els.elapsed.textContent = this.formatTime(this.state.elapsed);
@@ -403,7 +419,7 @@ const app = {
     const isMain = (this.state.phase === 'training' || this.state.phase === 'night');
     
     this.els.alert.layer.classList.add(isMain ? 'active' : 'soft-active');
-    this.els.alert.title.textContent = isMain ? "GARDE TERMINÉE" : "PHASE TERMINÉE";
+    this.els.alert.title.textContent = isMain ? "SESSION TERMINÉE" : "PHASE TERMINÉE";
     this.els.alert.icon.textContent = isMain ? "🔔" : "👌";
     this.els.alert.msg.textContent = isMain ? "STOP ! Appuyez pour valider" : "Appuyez pour la suite";
 
@@ -439,26 +455,33 @@ const app = {
     const p = this.state.phase;
     
     if (p === 'warmup') {
-      this.toast("Fin échauffement. Démarrage garde...");
+      this.toast("Fin échauffement. Démarrage...");
       setTimeout(() => this.startMainTraining(), 500);
       
     } else if (p === 'training') {
       this.state.stats.lastDur = this.state.elapsed; 
       
       if (this.state.settings.stretch) {
-          this.toast("Garde finie. Place aux étirements...");
+          this.toast("Session finie. Place aux étirements...");
           setTimeout(() => this.startPhase('stretching', this.rand(0.3, 0.75)), 500);
       } else {
+          // RESET UI RESULTAT
+          this.els.ratingArea.classList.remove('hidden');
+          this.els.waArea.classList.add('hidden');
           this.showView('result');
           this.els.statusText.textContent = 'Terminé';
       }
 
     } else if (p === 'stretching') {
-      this.toast("Séance complète terminée.");
+      this.toast("Entraînement complet terminé.");
+      this.els.ratingArea.classList.remove('hidden');
+      this.els.waArea.classList.add('hidden');
       this.showView('result');
       this.els.statusText.textContent = 'Terminé';
       
     } else if (p === 'night') {
+      this.els.ratingArea.classList.remove('hidden');
+      this.els.waArea.classList.add('hidden');
       this.showView('result');
     }
   },
@@ -469,32 +492,37 @@ const app = {
         if (success) this.state.stats.success++;
         this.saveSettings();
         this.updateStatsUI();
-        // ENVOI WHATSAPP
-        this.sendReport(success);
+        this.state.lastResult = success;
+        
+        this.els.ratingArea.classList.add('hidden');
+        this.els.waArea.classList.remove('hidden');
+    } else {
+        this.checkNightOption();
     }
+  },
+
+  triggerWhatsapp() {
+    let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
+    if(!cleanPhone) cleanPhone = "33683204184"; 
+
+    let type = this.state.phase === 'night' ? '🌙 Nocturne' : '🚪 Entraînement Porte';
+    if(this.state.settings.stretch && this.state.phase !== 'night') type += ' + Étirements';
     
+    let status = this.state.lastResult ? '✅ SUCCÈS' : '❌ ÉCHEC';
+    let dur = this.formatTime(this.state.stats.lastDur);
+    let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
+    
+    let msg = `*Rapport Porte*\n${type}\nDurée: ${dur}\nRésultat: ${status}\n${date}`;
+    
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  },
+
+  checkNightOption() {
     if(this.state.phase !== 'night' && this.state.stats.lastDur > 2*3600000) {
         this.showView('night');
     } else {
         this.resetUI();
     }
-  },
-
-  // MODULE WHATSAPP
-  sendReport(success) {
-    let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
-    if(!cleanPhone) cleanPhone = "33683204184"; // Fallback au cas où
-
-    let type = this.state.phase === 'night' ? '🌙 Nocturne' : '🚪 Garde Debout';
-    if(this.state.settings.stretch && this.state.phase !== 'night') type += ' + Étirements';
-    
-    let status = success ? '✅ SUCCÈS' : '❌ ÉCHEC';
-    let dur = this.formatTime(this.state.stats.lastDur);
-    let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
-    
-    let msg = `*Rapport Garde*\n${type}\nDurée Garde: ${dur}\nRésultat: ${status}\n${date}`;
-    
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   },
 
   startNightSession() {
@@ -524,7 +552,7 @@ const app = {
       this.els.phaseBadge.textContent = 'Préparation aléatoire';
     } else if (p === 'training') {
       this.els.statusIcon.textContent = '🚪';
-      this.els.statusText.textContent = 'EN GARDE';
+      this.els.statusText.textContent = 'DEVANT LA PORTE';
       this.els.phaseBadge.textContent = 'Restez vigilant...';
     } else if (p === 'stretching') {
       this.els.statusIcon.textContent = '🧘';
