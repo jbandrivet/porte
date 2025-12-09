@@ -168,19 +168,19 @@
           
           <div class="controls" id="levelSelection">
             <label style="text-align:center;margin-bottom:8px">Choisissez votre niveau d'entraînement</label>
-            <button onclick="selectLevel(1)" class="btn-primary">
+            <button id="level1" class="btn-primary">
               Niveau 1 <span class="level-badge">2-5h</span>
             </button>
-            <button onclick="selectLevel(2)" class="btn-primary">
+            <button id="level2" class="btn-primary">
               Niveau 2 <span class="level-badge">4-7h</span>
             </button>
-            <button onclick="selectLevel(3)" class="btn-primary">
+            <button id="level3" class="btn-primary">
               Niveau 3 <span class="level-badge">7-9h</span>
             </button>
-            <button onclick="selectLevel(4)" class="btn-primary">
+            <button id="level4" class="btn-primary">
               Niveau 4 <span class="level-badge">9h fixe</span>
             </button>
-            <button onclick="selectLevel(5)" class="btn-primary">
+            <button id="level5" class="btn-primary">
               Niveau 5 <span class="level-badge">2-9h</span>
             </button>
           </div>
@@ -392,6 +392,12 @@
     const startNightTraining = document.getElementById('startNightTraining');
     const alertFlash = document.getElementById('alertFlash');
     const alertMessage = document.getElementById('alertMessage');
+    
+    const level1Btn = document.getElementById('level1');
+    const level2Btn = document.getElementById('level2');
+    const level3Btn = document.getElementById('level3');
+    const level4Btn = document.getElementById('level4');
+    const level5Btn = document.getElementById('level5');
 
     function randomDuration(minHours, maxHours){
       const minMs = minHours * 3600000;
@@ -828,6 +834,12 @@
 
     stopBtn.addEventListener('click', stopTraining);
     testSoundBtn.addEventListener('click', testSound);
+
+    level1Btn.addEventListener('click', () => selectLevel(1));
+    level2Btn.addEventListener('click', () => selectLevel(2));
+    level3Btn.addEventListener('click', () => selectLevel(3));
+    level4Btn.addEventListener('click', () => selectLevel(4));
+    level5Btn.addEventListener('click', () => selectLevel(5));
 
     startWithWarmup.addEventListener('click', () => startTraining(true));
     startWithoutWarmup.addEventListener('click', () => startTraining(false));
