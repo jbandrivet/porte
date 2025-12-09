@@ -2,503 +2,573 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Entraînement garde debout v2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Garde Debout Strict v3.3</title>
   <style>
-    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;--primary:#3b82f6;--primary-hover:#2563eb;--success:#10b981;--danger:#ef4444;--warning:#f59e0b}
-    *{box-sizing:border-box}
-    body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#e6eef8;padding:20px}
-    .card{width:min(900px,100%);background:linear-gradient(180deg,#1e293b,#0f172a);padding:30px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.05)}
-    h1{margin:0 0 8px;font-size:28px;background:linear-gradient(90deg,#60a5fa,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    p{margin:4px 0 20px;color:#94a3b8;font-size:15px}
-    .main-content{display:grid;grid-template-columns:1fr 1fr;gap:30px}
-    @media(max-width:768px){.main-content{grid-template-columns:1fr}.card{padding:20px}}
-    .result-section{background:rgba(59,130,246,.05);padding:24px;border-radius:12px;border:1px solid rgba(59,130,246,.2)}
-    .status-display{text-align:center;margin:20px 0}
-    .status-icon{font-size:80px;margin:20px 0;animation:float 3s ease-in-out infinite}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-    .status-text{font-size:24px;font-weight:600;color:#60a5fa;margin:12px 0}
-    .elapsed-time{font-size:18px;color:#94a3b8;font-family:monospace;letter-spacing:2px}
-    .controls{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-    button{padding:14px 24px;border-radius:10px;border:0;cursor:pointer;font-weight:600;font-size:16px;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
-    button:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
-    button:active{transform:translateY(0)}
-    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
-    .btn-primary{background:var(--primary);color:white}
-    .btn-primary:hover:not(:disabled){background:var(--primary-hover)}
-    .btn-danger{background:var(--danger);color:white}
-    .btn-success{background:var(--success);color:white}
-    .btn-warning{background:var(--warning);color:white}
-    .btn-secondary{background:rgba(100,116,139,.2);color:#e2e8f0;border:1px solid rgba(255,255,255,.1)}
-    .btn-night{background:#7c3aed;color:white}
-    .settings{background:rgba(15,23,42,.5);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,.05);margin-top:20px}
-    .setting-group{margin-bottom:16px}
-    .setting-group:last-child{margin-bottom:0}
-    label{display:block;margin-bottom:6px;color:#cbd5e1;font-size:14px;font-weight:500}
-    .checkbox-label{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border-radius:8px;transition:background .2s}
-    input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
-    input[type=text]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.6);color:#e2e8f0;font-size:14px}
-    textarea{width:100%;height:120px;border-radius:8px;padding:12px;margin-top:8px;border:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.6);color:#e2e8f0;font-family:monospace;font-size:13px;resize:vertical}
-    .instructions{background:rgba(15,23,42,.3);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,.05);margin-bottom:16px}
-    .instructions h3{margin:0 0 12px;color:#60a5fa;font-size:18px}
-    .instructions ul{margin:0;padding-left:20px;line-height:1.8;color:#94a3b8}
-    .instructions li{margin-bottom:8px}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-    .stat-card{background:rgba(15,23,42,.4);padding:12px;border-radius:8px;text-align:center;border:1px solid rgba(255,255,255,.05)}
-    .stat-value{font-size:24px;font-weight:700;color:#60a5fa}
-    .stat-label{font-size:12px;color:#94a3b8;margin-top:4px}
-    .toast{position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);opacity:0;transform:translateY(-20px);transition:all .3s ease;z-index:1000}
-    .toast.show{opacity:1;transform:translateY(0)}
-    .questionnaire{display:none;animation:fadeIn .3s ease}
-    .questionnaire.active{display:block}
-    .questionnaire h3{margin:0 0 16px;color:#60a5fa;font-size:18px;text-align:center}
-    .questionnaire-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-    .phase-indicator{text-align:center;padding:12px;background:rgba(59,130,246,.1);border-radius:8px;margin-bottom:16px;border:1px solid rgba(59,130,246,.2)}
-    .phase-indicator.active{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3)}
-    .phase-indicator.waiting{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);animation:pulse-waiting 2s infinite}
-    @keyframes pulse-waiting{0%,100%{opacity:1}50%{opacity:.7}}
-    .alert-flash{position:fixed;top:0;left:0;right:0;bottom:0;background:#ef4444;z-index:9999;display:none;animation:flash .5s ease-in-out infinite}
-    .alert-flash.active{display:block}
-    @keyframes flash{0%,100%{opacity:0}50%{opacity:.9}}
-    .alert-message{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#000;padding:40px;border-radius:20px;font-size:32px;font-weight:bold;text-align:center;z-index:10000;display:none;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-    .alert-message.active{display:block;animation:bounce .5s ease-in-out infinite}
-    @keyframes bounce{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.1)}}
-    .level-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(59,130,246,.2);color:#60a5fa;margin-left:8px}
-    .session-info{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;color:#c4b5fd;display:none}
-    .session-info strong{color:#a78bfa}
+    :root {
+      --primary: #3b82f6; 
+      --success: #10b981; 
+      --danger: #ef4444; 
+      --warning: #f59e0b;
+      --text-main: #e2e8f0; 
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0;
+      background: linear-gradient(135deg, #020617 0%, #1e293b 100%);
+      color: var(--text-main); font-family: system-ui, -apple-system, sans-serif;
+      padding: 16px; 
+      overflow-x: hidden;
+    }
+
+    /* Mode OLED / Économie */
+    body.oled-mode { background: #000000; }
+    body.oled-mode .card, body.oled-mode h1, body.oled-mode p { opacity: 0; pointer-events: none; }
+    body.oled-mode .oled-overlay { display: flex; }
+
+    .oled-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000; z-index: 9999;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #333;
+    }
+    .oled-touch-area { width: 100%; height: 100%; position: absolute; }
+    .oled-icon { font-size: 4rem; opacity: 0.15; animation: breathe 4s infinite; }
+
+    .card {
+      width: min(600px, 100%);
+      background: rgba(30, 41, 59, 0.85);
+      padding: 24px; border-radius: 20px;
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 40px;
+    }
+
+    h1 { margin: 0 0 4px; font-size: 1.6rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.subtitle { margin: 0 0 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
+
+    /* Layout */
+    .status-display { 
+        text-align: center; margin: 0 0 20px; padding: 20px; 
+        border-radius: 16px; background: rgba(59, 130, 246, 0.05); 
+        border: 1px solid rgba(59, 130, 246, 0.1); 
+        position: relative; overflow: hidden; 
+    }
+    
+    .status-icon { font-size: 50px; display: block; margin-bottom: 5px; }
+    .status-text { font-size: 1.2rem; font-weight: 600; color: #60a5fa; margin-bottom: 4px; }
+    .elapsed-time { font-family: monospace; font-size: 1.8rem; letter-spacing: 1px; color: var(--text-main); font-weight: 700; }
+    
+    @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+    .active-ring::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); animation: pulse-ring 2s infinite; pointer-events: none; }
+
+    /* Boutons */
+    .btn-grid { display: flex; flex-direction: column; gap: 12px; }
+    button {
+      padding: 16px 20px; border-radius: 14px; border: none; cursor: pointer;
+      font-weight: 600; font-size: 1.05rem; color: white; 
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      touch-action: manipulation;
+    }
+    button:active { transform: scale(0.96); }
+    
+    .btn-primary { background: var(--primary); }
+    .btn-danger { background: var(--danger); }
+    .btn-success { background: var(--success); }
+    .btn-warning { background: var(--warning); color: #1e293b; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-main); }
+    .btn-night { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+    .btn-oled { background: #000; border: 1px solid #333; margin-top: 10px; }
+    
+    .badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; margin-left: auto; }
+
+    /* Options & Settings */
+    .settings-panel { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    input[type=text] { width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px; color: white; margin-bottom: 12px; font-size: 1rem; }
+    
+    .checkbox-row { display: flex; justify-content: space-around; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted); }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; padding: 5px; }
+    input[type="checkbox"] { transform: scale(1.3); accent-color: var(--primary); }
+
+    .program-options {
+        background: rgba(59, 130, 246, 0.1);
+        padding: 15px; border-radius: 12px;
+        margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.2);
+        display: flex; flex-direction: column; gap: 10px;
+    }
+
+    /* Alerts */
+    .fullscreen-alert {
+      position: fixed; inset: 0; background: var(--danger); z-index: 10000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      display: none; padding: 20px;
+    }
+    .fullscreen-alert.active { display: flex; animation: flash 0.5s infinite; }
+    .fullscreen-alert.soft-active { display: flex; background: var(--warning); }
+    
+    .alert-content { background: white; color: black; padding: 30px; width: 100%; max-width: 400px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+    @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.15; } 50% { transform: scale(1.1); opacity: 0.3; } }
+
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #334155; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: 0.3s; z-index: 10001; width: max-content; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="alert-flash" id="alertFlash"></div>
-  <div class="alert-message" id="alertMessage">🔔 TEMPS ÉCOULÉ ! 🔔<br><span style="font-size:24px">Appuyez pour arrêter</span></div>
-  <audio id="beepAudio" preload="auto"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
-  
-  <main class="card">
-    <h1>🚪 Entraînement garde debout</h1>
-    <p>Système d'entraînement progressif avec échauffement et étirements</p>
 
-    <div class="main-content">
-      <div>
-        <div class="result-section">
-          <div class="phase-indicator" id="phaseIndicator"><strong>Sélectionnez votre niveau</strong></div>
-          <div id="sessionInfo" class="session-info"><strong>Session :</strong> <span id="sessionType"></span><br><strong>Durée :</strong> <span id="sessionDuration"></span></div>
-          
-          <div class="status-display">
-            <div class="status-icon" id="statusIcon">⏱️</div>
-            <div class="status-text" id="statusText">En attente</div>
-            <div class="elapsed-time" id="elapsedTime"></div>
-          </div>
-          
-          <div class="controls" id="levelSelection">
-            <label style="text-align:center;margin-bottom:8px">Choisissez votre niveau</label>
-            <button id="level1" class="btn-primary">Niveau 1 <span class="level-badge">2-5h</span></button>
-            <button id="level2" class="btn-primary">Niveau 2 <span class="level-badge">4-7h</span></button>
-            <button id="level3" class="btn-primary">Niveau 3 <span class="level-badge">7-9h</span></button>
-            <button id="level4" class="btn-primary">Niveau 4 <span class="level-badge">9h fixe</span></button>
-            <button id="level5" class="btn-primary">Niveau 5 <span class="level-badge">2-9h</span></button>
-          </div>
+<div id="alertLayer" class="fullscreen-alert">
+  <div class="alert-content">
+    <div style="font-size: 60px;" id="alertIcon">🔔</div>
+    <h2 style="font-size: 1.8rem; margin: 10px 0;" id="alertTitle">TERMINÉ</h2>
+    <p id="alertMsg">Appuyez pour continuer</p>
+  </div>
+</div>
 
-          <div class="controls" id="warmupSelection" style="display:none">
-            <button id="startWithWarmup" class="btn-warning">🔥 Commencer avec échauffement (20-45 min)</button>
-            <button id="startWithoutWarmup" class="btn-primary">▶️ Commencer directement</button>
-          </div>
+<div id="oledOverlay" class="oled-overlay">
+  <div class="oled-touch-area" id="oledTouchArea"></div>
+  <div class="oled-icon">🛡️</div>
+  <p style="color: #444; margin-top: 20px;">Double-clic pour réveiller</p>
+</div>
 
-          <div class="controls" id="runningControls" style="display:none">
-            <button id="stop" class="btn-danger">🛑 Arrêter</button>
-          </div>
+<main class="card">
+  <h1>🛡️ Garde Debout (Strict)</h1>
+  <p class="subtitle">v3.3 • Pas de pause • Rapport WhatsApp</p>
 
-          <div class="questionnaire" id="questionnaire">
-            <h3>💬 Comment s'est passé l'entraînement ?</h3>
-            <div class="questionnaire-buttons">
-              <button class="btn-success" id="btnSuccess">✅ Tenu jusqu'au bout</button>
-              <button class="btn-danger" id="btnFailed">❌ Abandonné avant</button>
-              <button class="btn-warning" id="btnPartial">⚠️ Tenu partiellement</button>
-              <button class="btn-secondary" id="btnSkip">⏭️ Ne pas partager</button>
-            </div>
-          </div>
+  <div id="statusPanel" class="status-display">
+    <div class="status-icon" id="statusIcon">⏱️</div>
+    <div class="status-text" id="statusText">En attente</div>
+    <div class="elapsed-time" id="elapsedTime">00:00:00</div>
+    <div id="phaseBadge" style="margin-top:8px; font-size:0.8rem; opacity:0.7">Prêt à démarrer</div>
+  </div>
 
-          <div class="controls" id="stretchingOption" style="display:none">
-            <button id="startStretching" class="btn-warning">🧘 Faire les étirements (20-45 min)</button>
-            <button id="skipStretching" class="btn-secondary">⏭️ Passer</button>
-          </div>
-
-          <div class="controls" id="nightTrainingOption" style="display:none">
-            <button id="startNightTraining" class="btn-night">🌙 2e entraînement nocturne (1-3h)</button>
-          </div>
-        </div>
-
-        <div class="stats">
-          <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Sessions</div></div>
-          <div class="stat-card"><div class="stat-value" id="statLast">—</div><div class="stat-label">Dernière</div></div>
-          <div class="stat-card"><div class="stat-value" id="statSuccess">0%</div><div class="stat-label">Réussite</div></div>
-        </div>
-
-        <div class="settings">
-          <div class="setting-group">
-            <label>Numéro destinataire (sans +)</label>
-            <input type="text" id="phone" value="33783204184" placeholder="337..."/>
-          </div>
-          <div class="setting-group">
-            <label class="checkbox-label"><input type="checkbox" id="includeDate" checked/><span>Inclure date/heure</span></label>
-            <label class="checkbox-label"><input type="checkbox" id="soundAlert" checked/><span>Signal sonore</span></label>
-          </div>
-          <div class="setting-group">
-            <label>Aperçu du message</label>
-            <textarea id="message" readonly></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="instructions">
-          <h3>⚠️ Avant de commencer</h3>
-          <ul>
-            <li><strong>🔌 Branchez</strong> votre téléphone</li>
-            <li><strong>🔊 Testez</strong> avec le bouton ci-dessous</li>
-            <li><strong>🔔 Triple alerte :</strong> Son + Vibration + Flash rouge</li>
-          </ul>
-          <button id="testSound" class="btn-warning">🔊 Tester TOUT</button>
-        </div>
-
-        <div class="instructions">
-          <h3>📊 Niveaux</h3>
-          <ul>
-            <li><strong>Niveau 1 :</strong> 2-5h (débutant)</li>
-            <li><strong>Niveau 2 :</strong> 4-7h (intermédiaire)</li>
-            <li><strong>Niveau 3 :</strong> 7-9h (avancé)</li>
-            <li><strong>Niveau 4 :</strong> 9h fixe (expert)</li>
-            <li><strong>Niveau 5 :</strong> 2-9h (aléatoire)</li>
-          </ul>
-        </div>
-
-        <div class="instructions">
-          <h3>🔥 Options</h3>
-          <ul>
-            <li><strong>Échauffement :</strong> 20-45 min</li>
-            <li><strong>Étirements :</strong> 20-45 min</li>
-            <li><strong>Nocturne :</strong> 1-3h (si éligible)</li>
-          </ul>
-        </div>
-      </div>
+  <div id="view-levels">
+    <div class="program-options">
+        <label class="checkbox-label">
+            <input type="checkbox" id="optWarmup" onchange="app.saveSettings()"> 
+            <span>🔥 + Échauffement (20-45m)</span>
+        </label>
+        <label class="checkbox-label">
+            <input type="checkbox" id="optStretch" onchange="app.saveSettings()"> 
+            <span>🧘 + Étirements (Fin)</span>
+        </label>
     </div>
-  </main>
 
-  <div id="toast" class="toast"></div>
+    <div class="btn-grid">
+        <button onclick="app.selectLevel(1)" class="btn-primary">Niveau 1 <span class="badge">2-5h</span></button>
+        <button onclick="app.selectLevel(2)" class="btn-primary">Niveau 2 <span class="badge">4-7h</span></button>
+        <button onclick="app.selectLevel(3)" class="btn-primary">Niveau 3 <span class="badge">7-9h</span></button>
+        <button onclick="app.selectLevel(4)" class="btn-primary">Niveau 4 <span class="badge">9h Fixe</span></button>
+        <button onclick="app.selectLevel(5)" class="btn-night">Niveau 5 <span class="badge">2-9h Chaos</span></button>
+    </div>
+  </div>
+
+  <div id="view-running" class="btn-grid hidden">
+    <button onclick="app.toggleOledMode()" class="btn-oled" style="height: 100px; font-size: 1.2rem;">
+        🌑 ÉTEINDRE ÉCRAN<br>
+        <span style="font-size:0.8rem; font-weight:normal; color:#888; margin-top:5px">(Économie Batterie)</span>
+    </button>
+    
+    <div style="text-align:center; color:#ef4444; font-size:0.8rem; margin:10px 0; opacity:0.8">⚠️ Mode Strict : Pause désactivée</div>
+
+    <button onclick="app.confirmStop()" class="btn-danger">🛑 Abandonner</button>
+  </div>
+
+  <div id="view-result" class="btn-grid hidden">
+    <p style="text-align:center; color:white; font-size:1.1rem">Résultat de la Garde ?</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+      <button onclick="app.finish(true)" class="btn-success" style="height:70px">✅ Réussi</button>
+      <button onclick="app.finish(false)" class="btn-danger" style="height:70px">❌ Échec</button>
+    </div>
+    <button onclick="app.finish(null)" class="btn-secondary">⚠️ Partiel / Ne pas noter</button>
+  </div>
+
+  <div id="view-night" class="btn-grid hidden">
+    <div style="text-align:center; margin-bottom:15px; color:#a78bfa">Garde longue détectée.<br>Voulez-vous enchaîner ?</div>
+    <button onclick="app.startNightSession()" class="btn-night">🌙 Lancer Nocturne (1-3h)</button>
+    <button onclick="app.resetUI()" class="btn-secondary">🏁 Non, terminer la séance</button>
+  </div>
+
+  <div class="settings-panel">
+    <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp (sans +)</label>
+    <input type="text" id="phoneInput" value="33683204184" onchange="app.saveSettings()">
+    
+    <div class="checkbox-row">
+      <label class="checkbox-label"><input type="checkbox" id="checkSound" checked onchange="app.saveSettings()"> Son</label>
+      <label class="checkbox-label"><input type="checkbox" id="checkVib" checked onchange="app.saveSettings()"> Vib</label>
+      <label class="checkbox-label"><input type="checkbox" id="checkDate" checked onchange="app.saveSettings()"> Date</label>
+    </div>
+
+    <button onclick="app.testAlerts()" class="btn-secondary" style="font-size:0.9rem; padding:10px">🔔 Tester Sonneries</button>
+    <div style="text-align:center; margin-top:15px; font-size:0.8rem; color:#64748b">
+       Total: <span id="stTotal" style="color:#fff">0</span> | Succès: <span id="stRate" style="color:#fff">0%</span>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast">Info</div>
 
 <script>
-let stats={total:0,successes:0,durations:[],lastTrainingDuration:0};
-let targetDuration=0,startTime=0,timerInterval=null,audioContext=null,wakeLock=null,audioBuffer=null,selectedLevel=0,currentPhase='idle',trainingPhase='main';
-
-const beepAudio=document.getElementById('beepAudio');
-const elements={
-  statusIcon:document.getElementById('statusIcon'),
-  statusText:document.getElementById('statusText'),
-  elapsedTime:document.getElementById('elapsedTime'),
-  msgEl:document.getElementById('message'),
-  stopBtn:document.getElementById('stop'),
-  levelSelection:document.getElementById('levelSelection'),
-  warmupSelection:document.getElementById('warmupSelection'),
-  runningControls:document.getElementById('runningControls'),
-  questionnaire:document.getElementById('questionnaire'),
-  stretchingOption:document.getElementById('stretchingOption'),
-  nightTrainingOption:document.getElementById('nightTrainingOption'),
-  phaseIndicator:document.getElementById('phaseIndicator'),
-  soundAlert:document.getElementById('soundAlert'),
-  includeDate:document.getElementById('includeDate'),
-  phoneInput:document.getElementById('phone'),
-  statTotal:document.getElementById('statTotal'),
-  statLast:document.getElementById('statLast'),
-  statSuccess:document.getElementById('statSuccess'),
-  sessionInfo:document.getElementById('sessionInfo'),
-  sessionType:document.getElementById('sessionType'),
-  sessionDuration:document.getElementById('sessionDuration'),
-  alertFlash:document.getElementById('alertFlash'),
-  alertMessage:document.getElementById('alertMessage')
+/**
+ * AUDIO ENGINE
+ */
+const SoundEngine = {
+  ctx: null,
+  init() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  beep(startTime, duration, freq, type='square') {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0.3, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  },
+  // ALARME 5 BIPS (Garde)
+  playAlarmSequence() {
+    this.init();
+    const now = this.ctx.currentTime;
+    for(let i=0; i<5; i++) {
+        this.beep(now + i, 0.4, 880); 
+    }
+  },
+  // SIGNAL 2 BIPS (Transition)
+  playDoubleBeep() {
+    this.init();
+    const now = this.ctx.currentTime;
+    this.beep(now, 0.2, 600, 'sine');       
+    this.beep(now + 0.3, 0.2, 600, 'sine'); 
+  }
 };
 
-function randomDuration(minH,maxH){return Math.floor(Math.random()*(maxH*3600000-minH*3600000+1))+minH*3600000}
-function generateWarmupDuration(){const r=Math.random()*100;return r<60?randomDuration(40/60,45/60):r<90?randomDuration(30/60,40/60):randomDuration(20/60,30/60)}
-function formatDuration(ms){const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000);return `${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`}
-function formatDurationShort(ms){const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return h>0&&m>0?`${h}h${m}m`:h>0?`${h}h`:`${m}m`}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+/**
+ * LOGIC v3.3 (NO PAUSE)
+ */
+const app = {
+  state: {
+    phase: 'idle', 
+    startTime: 0,
+    elapsed: 0,
+    targetDuration: 0,
+    timerId: null,
+    level: 0,
+    wakeLock: null,
+    alarmInt: null,
+    settings: { phone: '33683204184', sound: true, vib: true, date: true, warmup: false, stretch: false },
+    stats: { total: 0, success: 0, lastDur: 0 }
+  },
+  
+  els: {
+    statusIcon: document.getElementById('statusIcon'),
+    statusText: document.getElementById('statusText'),
+    elapsed: document.getElementById('elapsedTime'),
+    phaseBadge: document.getElementById('phaseBadge'),
+    statusPanel: document.getElementById('statusPanel'),
+    views: {
+      levels: document.getElementById('view-levels'),
+      running: document.getElementById('view-running'),
+      result: document.getElementById('view-result'),
+      night: document.getElementById('view-night')
+    },
+    inputs: {
+      phone: document.getElementById('phoneInput'),
+      sound: document.getElementById('checkSound'),
+      vib: document.getElementById('checkVib'),
+      date: document.getElementById('checkDate'),
+      warmup: document.getElementById('optWarmup'),
+      stretch: document.getElementById('optStretch')
+    },
+    alert: {
+        layer: document.getElementById('alertLayer'),
+        icon: document.getElementById('alertIcon'),
+        title: document.getElementById('alertTitle'),
+        msg: document.getElementById('alertMsg')
+    },
+    oled: document.getElementById('oledOverlay')
+  },
 
-function playBeep(){
-  if(!elements.soundAlert.checked)return;
-  beepAudio.currentTime=0;
-  beepAudio.play().then(()=>{
-    let cnt=1;
-    const iv=setInterval(()=>{
-      if(cnt<5){beepAudio.currentTime=0;beepAudio.play();cnt++}else{clearInterval(iv)}
-    },2000);
-  }).catch(e=>console.error('Audio error:',e));
-}
+  init() {
+    this.loadSettings();
+    this.updateStatsUI();
+    
+    let lastTap = 0;
+    document.getElementById('oledTouchArea').addEventListener('click', (e) => {
+      const currentTime = new Date().getTime();
+      if (currentTime - lastTap < 500) this.toggleOledMode();
+      lastTap = currentTime;
+    });
 
-function vibrate(){
-  if('vibrate' in navigator){
-    const pat=[200,100,200,100,200,300,200,100,200,100,200];
-    for(let i=0;i<5;i++)setTimeout(()=>navigator.vibrate(pat),i*2000);
-  }
-}
+    this.els.alert.layer.addEventListener('click', () => this.stopAlert());
+  },
 
-function showVisualAlert(){
-  elements.alertFlash.classList.add('active');
-  elements.alertMessage.classList.add('active');
-  elements.alertMessage.addEventListener('click',stopVisualAlert);
-  elements.alertFlash.addEventListener('click',stopVisualAlert);
-}
+  saveSettings() {
+    const s = {
+      phone: this.els.inputs.phone.value,
+      sound: this.els.inputs.sound.checked,
+      vib: this.els.inputs.vib.checked,
+      date: this.els.inputs.date.checked,
+      warmup: this.els.inputs.warmup.checked,
+      stretch: this.els.inputs.stretch.checked,
+      stats: this.state.stats
+    };
+    localStorage.setItem('gd_settings_v3_3', JSON.stringify(s));
+    this.state.settings = s;
+  },
 
-function stopVisualAlert(){
-  elements.alertFlash.classList.remove('active');
-  elements.alertMessage.classList.remove('active');
-}
-
-function testSound(){
-  showToast('🔊 Test : Son + Vibration + Flash');
-  playBeep();vibrate();showVisualAlert();
-}
-
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLock=await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release',()=>console.log('Wake Lock released'));
+  loadSettings() {
+    const data = localStorage.getItem('gd_settings_v3_3');
+    if(data) {
+      const s = JSON.parse(data);
+      if(s.phone) this.els.inputs.phone.value = s.phone;
+      this.els.inputs.sound.checked = s.sound;
+      this.els.inputs.vib.checked = s.vib;
+      this.els.inputs.date.checked = s.date;
+      this.els.inputs.warmup.checked = s.warmup;
+      this.els.inputs.stretch.checked = s.stretch;
+      if(s.stats) this.state.stats = s.stats;
+      this.state.settings = s;
     }
-  }catch(e){console.error('Wake Lock error:',e)}
-}
+  },
 
-function releaseWakeLock(){
-  if(wakeLock){wakeLock.release();wakeLock=null}
-}
+  updateStatsUI() {
+    document.getElementById('stTotal').textContent = this.state.stats.total;
+    const rate = this.state.stats.total > 0 ? Math.round((this.state.stats.success / this.state.stats.total) * 100) : 0;
+    document.getElementById('stRate').textContent = rate + '%';
+  },
 
-function selectLevel(lvl){
-  selectedLevel=lvl;
-  elements.levelSelection.style.display='none';
-  elements.warmupSelection.style.display='flex';
-  elements.phaseIndicator.innerHTML=`<strong>Niveau ${lvl} sélectionné</strong> — Échauffement ?`;
-  showToast(`✅ Niveau ${lvl} sélectionné`);
-}
+  rand(minH, maxH) { return Math.floor(Math.random() * (maxH*3600000 - minH*3600000 + 1)) + minH*3600000; },
 
-function getLevelDuration(lvl){
-  switch(lvl){
-    case 1:return randomDuration(2,5);
-    case 2:return randomDuration(4,7);
-    case 3:return randomDuration(7,9);
-    case 4:return 9*3600000;
-    case 5:return randomDuration(2,9);
-    default:return randomDuration(2,9);
-  }
-}
+  selectLevel(lvl) {
+    SoundEngine.init(); 
+    this.state.level = lvl;
+    if (this.state.settings.warmup) this.startPhase('warmup', this.rand(0.3, 0.75)); 
+    else this.startMainTraining();
+  },
 
-async function startTraining(withWarmup){
-  beepAudio.play().then(()=>{beepAudio.pause();beepAudio.currentTime=0}).catch(e=>console.log('init:',e));
-  await requestWakeLock();
-  
-  if(withWarmup){
-    trainingPhase='warmup';
-    targetDuration=generateWarmupDuration();
-    elements.sessionType.textContent='Échauffement';
-    elements.statusIcon.textContent='🔥';
-    elements.statusText.textContent='Échauffement...';
-    elements.phaseIndicator.innerHTML='<strong>Échauffement</strong>';
-  }else{
-    trainingPhase='main';
-    targetDuration=getLevelDuration(selectedLevel);
-    elements.sessionType.textContent=`Entraînement Niveau ${selectedLevel}`;
-    elements.statusIcon.textContent='🚪';
-    elements.statusText.textContent='En garde...';
-    elements.phaseIndicator.innerHTML='<strong>Entraînement</strong>';
-  }
-  
-  elements.sessionDuration.textContent='??:??';
-  elements.sessionInfo.style.display='block';
-  startTime=Date.now();
-  elements.warmupSelection.style.display='none';
-  elements.runningControls.style.display='flex';
-  elements.phaseIndicator.classList.add('waiting');
-  
-  timerInterval=setInterval(()=>{
-    elements.elapsedTime.textContent=formatDuration(Date.now()-startTime);
-    if(Date.now()-startTime>=targetDuration)endTraining();
-  },1000);
-  
-  showToast('🚀 Démarré !');
-}
+  startMainTraining() {
+      let dur = 0;
+      switch(this.state.level) {
+        case 1: dur = this.rand(2, 5); break;
+        case 2: dur = this.rand(4, 7); break;
+        case 3: dur = this.rand(7, 9); break;
+        case 4: dur = 9 * 3600000; break;
+        case 5: dur = this.rand(2, 9); break;
+      }
+      this.startPhase('training', dur);
+  },
 
-function endTraining(){
-  clearInterval(timerInterval);
-  releaseWakeLock();
-  playBeep();vibrate();showVisualAlert();
-  
-  if(trainingPhase==='warmup'){
-    elements.statusText.textContent='Échauffement terminé !';
-    elements.phaseIndicator.classList.remove('waiting');
-    elements.runningControls.style.display='none';
-    elements.sessionInfo.style.display='none';
-    setTimeout(()=>{stopVisualAlert();startTraining(false)},3000);
-  }else if(trainingPhase==='main'){
-    elements.statusText.textContent='Terminé !';
-    elements.phaseIndicator.classList.remove('waiting');
-    elements.phaseIndicator.classList.add('active');
-    elements.runningControls.style.display='none';
-    elements.questionnaire.classList.add('active');
-  }else if(trainingPhase==='stretching'){
-    elements.statusText.textContent='Étirements terminés !';
-    elements.runningControls.style.display='none';
-    elements.sessionInfo.style.display='none';
-    setTimeout(()=>{stopVisualAlert();checkNightTraining();resetToInitial()},3000);
-  }else if(trainingPhase==='night'){
-    elements.statusText.textContent='Nocturne terminé !';
-    elements.runningControls.style.display='none';
-    elements.questionnaire.classList.add('active');
-  }
-}
+  startPhase(phaseName, durationMs) {
+    this.state.phase = phaseName;
+    this.state.targetDuration = durationMs;
+    this.state.startTime = Date.now();
+    this.state.elapsed = 0;
+    
+    this.updateUIForPhase(phaseName);
+    this.showView('running');
+    this.els.statusPanel.classList.add('active-ring');
+    
+    if (this.state.timerId) clearInterval(this.state.timerId);
+    this.state.timerId = setInterval(() => this.tick(), 1000);
+    this.requestWakeLock();
+  },
 
-function stopTraining(){
-  if(confirm('Arrêter ?')){
-    clearInterval(timerInterval);
-    releaseWakeLock();
-    elements.runningControls.style.display='none';
-    elements.sessionInfo.style.display='none';
-    setTimeout(resetToInitial,2000);
-  }
-}
+  tick() {
+    // PLUS DE PAUSE ICI
+    const now = Date.now();
+    this.state.elapsed = now - this.state.startTime;
+    this.els.elapsed.textContent = this.formatTime(this.state.elapsed);
 
-function resetToInitial(){
-  stopVisualAlert();
-  elements.levelSelection.style.display='flex';
-  elements.warmupSelection.style.display='none';
-  elements.runningControls.style.display='none';
-  elements.questionnaire.classList.remove('active');
-  elements.stretchingOption.style.display='none';
-  elements.nightTrainingOption.style.display='none';
-  elements.sessionInfo.style.display='none';
-  elements.phaseIndicator.classList.remove('active','waiting');
-  elements.phaseIndicator.innerHTML='<strong>Sélectionnez votre niveau</strong>';
-  elements.statusIcon.textContent='⏱️';
-  elements.statusText.textContent='En attente';
-  elements.elapsedTime.textContent='';
-  selectedLevel=0;trainingPhase='main';
-}
-
-function updateStats(dur,success){
-  stats.total++;
-  if(success)stats.successes++;
-  stats.durations.push(dur);
-  stats.lastTrainingDuration=dur;
-  elements.statTotal.textContent=stats.total;
-  elements.statLast.textContent=formatDurationShort(dur);
-  elements.statSuccess.textContent=Math.round(stats.successes/stats.total*100)+'%';
-}
-
-function buildMessage(dur,result,phase){
-  let msg=`🚪 Entraînement garde debout\nType : ${phase}\nDurée : ${formatDuration(dur)}\nRésultat : ${result}\n`;
-  if(elements.includeDate.checked){
-    const d=new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    msg+=`📅 ${d}\n`;
-  }
-  return msg+'\n(Guard-Trainer v2.0)';
-}
-
-function handleResult(emoji,text,success){
-  const phase=trainingPhase==='night'?'Entraînement nocturne':'Entraînement principal';
-  const msg=buildMessage(targetDuration,emoji+' '+text,phase);
-  elements.msgEl.value=msg;
-  updateStats(targetDuration,success);
-  
-  const phone=elements.phoneInput.value.trim();
-  if(!phone){showToast('⚠️ Numéro manquant');return}
-  
-  showToast('📱 WhatsApp...');
-  setTimeout(()=>{
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
-    if(trainingPhase==='main'){
-      elements.questionnaire.classList.remove('active');
-      elements.stretchingOption.style.display='flex';
-    }else{
-      checkNightTraining();resetToInitial();
+    if (this.state.elapsed >= this.state.targetDuration) {
+      this.triggerAlertLogic();
     }
-  },500);
-}
+  },
 
-function checkNightTraining(){
-  const durH=stats.lastTrainingDuration/3600000;
-  if(durH>=2&&durH<=4){
-    elements.nightTrainingOption.style.display='flex';
-    showToast('🌙 Nocturne disponible');
+  triggerAlertLogic() {
+    clearInterval(this.state.timerId);
+    if (document.body.classList.contains('oled-mode')) this.toggleOledMode();
+
+    const isMain = (this.state.phase === 'training' || this.state.phase === 'night');
+    
+    this.els.alert.layer.classList.add(isMain ? 'active' : 'soft-active');
+    this.els.alert.title.textContent = isMain ? "GARDE TERMINÉE" : "PHASE TERMINÉE";
+    this.els.alert.icon.textContent = isMain ? "🔔" : "👌";
+    this.els.alert.msg.textContent = isMain ? "STOP ! Appuyez pour valider" : "Appuyez pour la suite";
+
+    if(this.state.settings.sound) {
+        if(isMain) {
+            SoundEngine.playAlarmSequence();
+            this.state.alarmInt = setInterval(() => SoundEngine.playAlarmSequence(), 7000);
+        } else {
+            SoundEngine.playDoubleBeep();
+            this.state.alarmInt = setInterval(() => SoundEngine.playDoubleBeep(), 5000);
+        }
+    }
+
+    if(this.state.settings.vib && navigator.vibrate) {
+        navigator.vibrate(isMain ? [500, 500, 500] : [200, 100, 200]);
+    }
+  },
+
+  stopAlert() {
+    this.els.alert.layer.classList.remove('active', 'soft-active');
+    clearInterval(this.state.alarmInt);
+    this.els.statusPanel.classList.remove('active-ring');
+    this.transitionToNext();
+  },
+
+  testAlerts() {
+    this.toast('Test: 2 Bips puis 5 Bips');
+    SoundEngine.playDoubleBeep();
+    setTimeout(() => SoundEngine.playAlarmSequence(), 2000);
+  },
+
+  transitionToNext() {
+    const p = this.state.phase;
+    
+    if (p === 'warmup') {
+      this.toast("Fin échauffement. Démarrage garde...");
+      setTimeout(() => this.startMainTraining(), 500);
+      
+    } else if (p === 'training') {
+      this.state.stats.lastDur = this.state.elapsed; 
+      
+      if (this.state.settings.stretch) {
+          this.toast("Garde finie. Place aux étirements...");
+          setTimeout(() => this.startPhase('stretching', this.rand(0.3, 0.75)), 500);
+      } else {
+          this.showView('result');
+          this.els.statusText.textContent = 'Terminé';
+      }
+
+    } else if (p === 'stretching') {
+      this.toast("Séance complète terminée.");
+      this.showView('result');
+      this.els.statusText.textContent = 'Terminé';
+      
+    } else if (p === 'night') {
+      this.showView('result');
+    }
+  },
+
+  finish(success) {
+    if (success !== null) {
+        this.state.stats.total++;
+        if (success) this.state.stats.success++;
+        this.saveSettings();
+        this.updateStatsUI();
+        // ENVOI WHATSAPP
+        this.sendReport(success);
+    }
+    
+    if(this.state.phase !== 'night' && this.state.stats.lastDur > 2*3600000) {
+        this.showView('night');
+    } else {
+        this.resetUI();
+    }
+  },
+
+  // MODULE WHATSAPP
+  sendReport(success) {
+    let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
+    if(!cleanPhone) cleanPhone = "33683204184"; // Fallback au cas où
+
+    let type = this.state.phase === 'night' ? '🌙 Nocturne' : '🚪 Garde Debout';
+    if(this.state.settings.stretch && this.state.phase !== 'night') type += ' + Étirements';
+    
+    let status = success ? '✅ SUCCÈS' : '❌ ÉCHEC';
+    let dur = this.formatTime(this.state.stats.lastDur);
+    let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
+    
+    let msg = `*Rapport Garde*\n${type}\nDurée Garde: ${dur}\nRésultat: ${status}\n${date}`;
+    
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  },
+
+  startNightSession() {
+    this.startPhase('night', this.rand(1, 3));
+    this.els.statusIcon.textContent = '🌙';
+  },
+
+  toggleOledMode() {
+    document.body.classList.toggle('oled-mode');
+    if(document.body.classList.contains('oled-mode')) this.toast('Double-clic pour rallumer');
+  },
+
+  async requestWakeLock() {
+    try { if ('wakeLock' in navigator) this.state.wakeLock = await navigator.wakeLock.request('screen'); } 
+    catch (e) {}
+  },
+
+  showView(viewName) {
+    Object.values(this.els.views).forEach(el => el.classList.add('hidden'));
+    this.els.views[viewName].classList.remove('hidden');
+  },
+
+  updateUIForPhase(p) {
+    if(p === 'warmup') {
+      this.els.statusIcon.textContent = '🔥';
+      this.els.statusText.textContent = 'Échauffement';
+      this.els.phaseBadge.textContent = 'Préparation aléatoire';
+    } else if (p === 'training') {
+      this.els.statusIcon.textContent = '🚪';
+      this.els.statusText.textContent = 'EN GARDE';
+      this.els.phaseBadge.textContent = 'Restez vigilant...';
+    } else if (p === 'stretching') {
+      this.els.statusIcon.textContent = '🧘';
+      this.els.statusText.textContent = 'Étirements';
+      this.els.phaseBadge.textContent = 'Récupération aléatoire';
+    } else if (p === 'night') {
+      this.els.statusText.textContent = 'Nocturne';
+    }
+  },
+
+  resetUI() {
+    this.state.phase = 'idle';
+    this.showView('levels');
+    this.els.statusIcon.textContent = '⏱️';
+    this.els.statusText.textContent = 'Prêt';
+    this.els.elapsed.textContent = '00:00:00';
+    this.els.phaseBadge.textContent = 'En attente';
+    this.els.statusPanel.classList.remove('active-ring');
+  },
+
+  confirmStop() {
+    if(confirm("Abandonner ?")) {
+      clearInterval(this.state.timerId);
+      this.els.statusPanel.classList.remove('active-ring');
+      this.resetUI();
+    }
+  },
+
+  formatTime(ms) {
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+  },
+  
+  toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
   }
-}
+};
 
-async function startStretching(){
-  trainingPhase='stretching';
-  targetDuration=generateWarmupDuration();
-  await requestWakeLock();
-  elements.stretchingOption.style.display='none';
-  elements.runningControls.style.display='flex';
-  elements.sessionType.textContent='Étirements';
-  elements.sessionDuration.textContent='??:??';
-  elements.sessionInfo.style.display='block';
-  elements.statusIcon.textContent='🧘';
-  elements.statusText.textContent='Étirements...';
-  elements.phaseIndicator.innerHTML='<strong>Étirements</strong>';
-  elements.phaseIndicator.classList.add('waiting');
-  startTime=Date.now();
-  timerInterval=setInterval(()=>{
-    elements.elapsedTime.textContent=formatDuration(Date.now()-startTime);
-    if(Date.now()-startTime>=targetDuration)endTraining();
-  },1000);
-}
-
-async function startNightTraining(){
-  trainingPhase='night';
-  targetDuration=randomDuration(1,3);
-  await requestWakeLock();
-  elements.nightTrainingOption.style.display='none';
-  elements.runningControls.style.display='flex';
-  elements.sessionType.textContent='Entraînement nocturne';
-  elements.sessionDuration.textContent='??:??';
-  elements.sessionInfo.style.display='block';
-  elements.statusIcon.textContent='🌙';
-  elements.statusText.textContent='Nocturne...';
-  elements.phaseIndicator.innerHTML='<strong>Entraînement nocturne</strong>';
-  elements.phaseIndicator.classList.add('waiting');
-  startTime=Date.now();
-  timerInterval=setInterval(()=>{
-    elements.elapsedTime.textContent=formatDuration(Date.now()-startTime);
-    if(Date.now()-startTime>=targetDuration)endTraining();
-  },1000);
-}
-
-document.getElementById('level1').addEventListener('click',()=>selectLevel(1));
-document.getElementById('level2').addEventListener('click',()=>selectLevel(2));
-document.getElementById('level3').addEventListener('click',()=>selectLevel(3));
-document.getElementById('level4').addEventListener('click',()=>selectLevel(4));
-document.getElementById('level5').addEventListener('click',()=>selectLevel(5));
-document.getElementById('startWithWarmup').addEventListener('click',()=>startTraining(true));
-document.getElementById('startWithoutWarmup').addEventListener('click',()=>startTraining(false));
-document.getElementById('stop').addEventListener('click',stopTraining);
-document.getElementById('testSound').addEventListener('click',testSound);
-document.getElementById('btnSuccess').addEventListener('click',()=>handleResult('✅','Tenu jusqu\'au bout',true));
-document.getElementById('btnFailed').addEventListener('click',()=>handleResult('❌','Abandonné',false));
-document.getElementById('btnPartial').addEventListener('click',()=>handleResult('⚠️','Partiel',false));
-document.getElementById('btnSkip').addEventListener('click',()=>{
-  showToast('⏭️ Non partagé');
-  if(trainingPhase==='main'){
-    elements.questionnaire.classList.remove('active');
-    elements.stretchingOption.style.display='flex';
-  }else{
-    checkNightTraining();resetToInitial();
-  }
-});
-document.getElementById('startStretching').addEventListener('click',startStretching);
-document.getElementById('skipStretching').addEventListener('click',()=>{
-  elements.stretchingOption.style.display='none';
-  checkNightTraining();resetToInitial();
-});
-document.getElementById('startNightTraining').addEventListener('click',startNightTraining);
-document.addEventListener('visibilitychange',async()=>{
-  if(wakeLock!==null&&document.visibilityState==='visible')await requestWakeLock();
-});
+app.init();
 </script>
 </body>
 </html>
