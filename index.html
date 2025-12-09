@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v4.0</title>
+  <title>Entraînement Porte v4.1</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -172,7 +172,7 @@
   <p class="subtitle">Discipline • Probabilités • Endurance</p>
 
   <div class="info-alert">
-      ⚡ <strong>RAPPEL :</strong> Branchez votre téléphone sur secteur pour éviter la coupure !
+      ⚡ <strong>RAPPEL :</strong> Branchez le téléphone pour éviter la coupure !
   </div>
 
   <div id="statusPanel" class="status-display">
@@ -260,7 +260,7 @@
     </div>
 
     <div class="ios-note">
-        ⚠️ <strong>iPhone :</strong> Vérifiez que le bouton latéral "Silencieux" n'est PAS enclenché (pas de rouge), sinon pas de son !
+        ⚠️ <strong>iPhone :</strong> Le petit switch "Silencieux" sur le côté doit être DÉSACTIVÉ (Pas de rouge) sinon pas de son !
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -360,9 +360,8 @@ const app = {
   init() {
     this.loadSettings();
     this.updateStatsUI();
-    this.requestWakeLock(); // Try early
+    this.requestWakeLock();
     
-    // OLED Exit
     let lastTap = 0;
     document.getElementById('oledTouchArea').addEventListener('click', (e) => {
       const currentTime = new Date().getTime();
@@ -370,10 +369,8 @@ const app = {
       lastTap = currentTime;
     });
 
-    // Alert click
     this.els.alert.layer.addEventListener('click', () => this.stopAlert());
     
-    // Wake Lock Re-apply
     document.addEventListener('visibilitychange', async () => {
         if (this.state.wakeLock !== null && document.visibilityState === 'visible') {
             this.requestWakeLock();
@@ -418,7 +415,6 @@ const app = {
 
   rand(minH, maxH) { return Math.floor(Math.random() * (maxH*3600000 - minH*3600000 + 1)) + minH*3600000; },
 
-  // PROBABILITES SPECIFIQUES (60/30/10)
   getWeightedDuration() {
       const r = Math.random() * 100;
       let min, max; 
@@ -558,6 +554,28 @@ const app = {
       this.els.statusText.textContent = 'Terminé';
   },
 
+  confirmStop() {
+    if(confirm("Abandonner l'entraînement ?\n(Un rapport d'échec sera envoyé)")) {
+      clearInterval(this.state.timerId);
+      this.els.statusPanel.classList.remove('active-ring');
+      
+      // AUTO REPORT
+      let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
+      if(!cleanPhone) cleanPhone = "33683204184";
+      let dur = this.formatTime(this.state.elapsed);
+      let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
+      let msg = `❌ *ABANDON / ÉCHEC*\n🚪 Entraînement Porte\n⏱️ Tenu : ${dur}\n${date}`;
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+
+      // Log stats
+      this.state.stats.total++;
+      this.saveSettings();
+      this.updateStatsUI();
+
+      this.resetUI();
+    }
+  },
+
   finish(success) {
     if (success !== null) {
         this.state.stats.total++;
@@ -621,7 +639,7 @@ const app = {
         if ('wakeLock' in navigator) {
             this.state.wakeLock = await navigator.wakeLock.request('screen');
         }
-    } catch (e) { console.log('WakeLock non supporté ou refusé'); }
+    } catch (e) { console.log('WakeLock refusé ou indisponible'); }
   },
 
   showView(viewName) {
@@ -655,14 +673,6 @@ const app = {
     this.els.elapsed.textContent = '00:00:00';
     this.els.phaseBadge.textContent = 'En attente';
     this.els.statusPanel.classList.remove('active-ring');
-  },
-
-  confirmStop() {
-    if(confirm("Abandonner ?")) {
-      clearInterval(this.state.timerId);
-      this.els.statusPanel.classList.remove('active-ring');
-      this.resetUI();
-    }
   },
 
   formatTime(ms) {
