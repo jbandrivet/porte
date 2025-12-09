@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v3.8</title>
+  <title>Entraînement Porte v4.0</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -51,7 +51,29 @@
     }
 
     h1 { margin: 0 0 4px; font-size: 1.8rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p.subtitle { margin: 0 0 20px; color: var(--text-muted); font-size: 0.9rem; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
+    p.subtitle { margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ALERTES INFO */
+    .info-alert {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid var(--warning);
+        color: #fcd34d;
+        padding: 8px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+    }
+    .ios-note {
+        font-size: 0.8rem;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        padding: 8px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        text-align: center;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
 
     .status-display { 
         text-align: center; margin: 0 0 20px; padding: 20px; 
@@ -149,6 +171,10 @@
   <h1>🚪 Entraînement Porte</h1>
   <p class="subtitle">Discipline • Probabilités • Endurance</p>
 
+  <div class="info-alert">
+      ⚡ <strong>RAPPEL :</strong> Branchez votre téléphone sur secteur pour éviter la coupure !
+  </div>
+
   <div id="statusPanel" class="status-display">
     <div class="status-icon" id="statusIcon">⏱️</div>
     <div class="status-text" id="statusText">En attente</div>
@@ -233,6 +259,10 @@
       <label class="checkbox-label"><input type="checkbox" id="checkDate" checked onchange="app.saveSettings()"> Date</label>
     </div>
 
+    <div class="ios-note">
+        ⚠️ <strong>iPhone :</strong> Vérifiez que le bouton latéral "Silencieux" n'est PAS enclenché (pas de rouge), sinon pas de son !
+    </div>
+
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
         <button onclick="app.testAlerts()" class="btn-secondary" style="font-size:0.9rem; padding:10px">🔔 Tester Son</button>
         <button onclick="app.toggleOledMode()" class="btn-secondary" style="font-size:0.9rem; padding:10px; background:#000; border:1px solid #444">🌑 Test Écran</button>
@@ -279,7 +309,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v3.8 */
+/** LOGIC v4.0 */
 const app = {
   state: {
     phase: 'idle', 
@@ -330,7 +360,9 @@ const app = {
   init() {
     this.loadSettings();
     this.updateStatsUI();
+    this.requestWakeLock(); // Try early
     
+    // OLED Exit
     let lastTap = 0;
     document.getElementById('oledTouchArea').addEventListener('click', (e) => {
       const currentTime = new Date().getTime();
@@ -338,7 +370,15 @@ const app = {
       lastTap = currentTime;
     });
 
+    // Alert click
     this.els.alert.layer.addEventListener('click', () => this.stopAlert());
+    
+    // Wake Lock Re-apply
+    document.addEventListener('visibilitychange', async () => {
+        if (this.state.wakeLock !== null && document.visibilityState === 'visible') {
+            this.requestWakeLock();
+        }
+    });
   },
 
   saveSettings() {
@@ -351,12 +391,12 @@ const app = {
       stretch: this.els.inputs.stretch.checked,
       stats: this.state.stats
     };
-    localStorage.setItem('gd_settings_v3_8', JSON.stringify(s));
+    localStorage.setItem('gd_settings_v4', JSON.stringify(s));
     this.state.settings = s;
   },
 
   loadSettings() {
-    const data = localStorage.getItem('gd_settings_v3_8');
+    const data = localStorage.getItem('gd_settings_v4');
     if(data) {
       const s = JSON.parse(data);
       if(s.phone) this.els.inputs.phone.value = s.phone;
@@ -376,13 +416,12 @@ const app = {
     document.getElementById('stRate').textContent = rate + '%';
   },
 
-  // Générateur Classique
   rand(minH, maxH) { return Math.floor(Math.random() * (maxH*3600000 - minH*3600000 + 1)) + minH*3600000; },
 
-  // Générateur Pondéré (Pour échauffement et étirement)
+  // PROBABILITES SPECIFIQUES (60/30/10)
   getWeightedDuration() {
       const r = Math.random() * 100;
-      let min, max; // en minutes
+      let min, max; 
 
       if (r < 60) {
           // 60% : 40-45 mn
@@ -395,9 +434,7 @@ const app = {
           min = 20; max = 30;
       }
 
-      // Conversion en ms
       const minutes = Math.floor(Math.random() * (max - min + 1)) + min;
-      console.log(`Durée générée pondérée : ${minutes} min`);
       return minutes * 60 * 1000;
   },
 
@@ -405,7 +442,6 @@ const app = {
     SoundEngine.init(); 
     this.state.level = lvl;
     if (this.state.settings.warmup) {
-        // Utilise la nouvelle logique pondérée pour l'échauffement
         this.startPhase('warmup', this.getWeightedDuration()); 
     } else {
         this.startMainTraining();
@@ -500,7 +536,6 @@ const app = {
       
       if (this.state.settings.stretch) {
           this.toast("Session finie. Place aux étirements...");
-          // Utilise la nouvelle logique pondérée pour les étirements
           setTimeout(() => this.startPhase('stretching', this.getWeightedDuration()), 500);
       } else {
           this.showResultScreen();
@@ -516,7 +551,6 @@ const app = {
   },
 
   showResultScreen() {
-      // RESET UI RESULTAT
       this.els.ratingArea.classList.remove('hidden');
       this.els.waArea.classList.add('hidden');
       this.els.redoArea.classList.add('hidden');
@@ -532,10 +566,9 @@ const app = {
         this.updateStatsUI();
         this.state.lastResult = success;
         
-        // Cacher la zone de notation
         this.els.ratingArea.classList.add('hidden');
         
-        // 🎲 LOGIQUE ROULETTE RUSSE (1/3)
+        // 1 Chance sur 3 de punition
         const badLuck = Math.floor(Math.random() * 3) === 0;
 
         if (badLuck) {
@@ -574,7 +607,6 @@ const app = {
   },
 
   startNightSession() {
-    // Nocturne reste 1-3h aléatoire
     this.startPhase('night', this.rand(1, 3));
     this.els.statusIcon.textContent = '🌙';
   },
@@ -585,8 +617,11 @@ const app = {
   },
 
   async requestWakeLock() {
-    try { if ('wakeLock' in navigator) this.state.wakeLock = await navigator.wakeLock.request('screen'); } 
-    catch (e) {}
+    try { 
+        if ('wakeLock' in navigator) {
+            this.state.wakeLock = await navigator.wakeLock.request('screen');
+        }
+    } catch (e) { console.log('WakeLock non supporté ou refusé'); }
   },
 
   showView(viewName) {
