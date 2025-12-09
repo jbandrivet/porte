@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v4.1</title>
+  <title>Entraînement Porte v4.2</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -251,7 +251,7 @@
 
   <div class="settings-panel">
     <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp</label>
-    <input type="text" id="phoneInput" value="33683204184" onchange="app.saveSettings()">
+    <input type="text" id="phoneInput" value="33783204184" onchange="app.saveSettings()">
     
     <div class="checkbox-row">
       <label class="checkbox-label"><input type="checkbox" id="checkSound" checked onchange="app.saveSettings()"> Son</label>
@@ -309,7 +309,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v4.0 */
+/** LOGIC v4.2 */
 const app = {
   state: {
     phase: 'idle', 
@@ -320,7 +320,7 @@ const app = {
     level: 0,
     wakeLock: null,
     alarmInt: null,
-    settings: { phone: '33683204184', sound: true, vib: true, date: true, warmup: false, stretch: false },
+    settings: { phone: '33783204184', sound: true, vib: true, date: true, warmup: false, stretch: false },
     stats: { total: 0, success: 0, lastDur: 0 },
     lastResult: null 
   },
@@ -561,7 +561,7 @@ const app = {
       
       // AUTO REPORT
       let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
-      if(!cleanPhone) cleanPhone = "33683204184";
+      if(!cleanPhone) cleanPhone = "33783204184";
       let dur = this.formatTime(this.state.elapsed);
       let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
       let msg = `❌ *ABANDON / ÉCHEC*\n🚪 Entraînement Porte\n⏱️ Tenu : ${dur}\n${date}`;
@@ -602,7 +602,7 @@ const app = {
 
   triggerWhatsapp() {
     let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
-    if(!cleanPhone) cleanPhone = "33683204184"; 
+    if(!cleanPhone) cleanPhone = "33783204184"; 
 
     let type = this.state.phase === 'night' ? '🌙 Nocturne' : '🚪 Entraînement Porte';
     if(this.state.settings.stretch && this.state.phase !== 'night') type += ' + Étirements';
