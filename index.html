@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v5.1</title>
+  <title>Entraînement Porte v5.2</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -437,7 +437,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v5.1 */
+/** LOGIC v5.2 */
 const app = {
   state: {
     phase: 'idle', 
@@ -452,7 +452,9 @@ const app = {
     stats: { total: 0, success: 0, lastDur: 0 },
     lastResult: null,
     durations: { warmup: 0, training: 0, stretching: 0, night: 0 },
-    plannedStretchDur: 0, // NEW: calculated at start
+    plannedMainDur: 0,
+    plannedWarmupDur: 0,
+    plannedStretchDur: 0,
     adminKey: "Hubble:2001",
     remoteData: null // Store encoded string from URL
   },
@@ -566,13 +568,11 @@ const app = {
                   const m = mMin % 60;
                   this.els.resMain.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
                   
-                  // Approx end time (Assuming link clicked recently - not perfect but indicative)
-                  // For exact end time, we would need to encode startTime timestamp, 
-                  // but user said "heur de fin", so we assume relative to now or just duration.
-                  // Let's stick to Duration strictly as requested.
-                  // Adding fake end time based on "if started now"
+                  // Fake end time (assuming clicked recently)
                   const now = new Date();
-                  const end = new Date(now.getTime() + mMin*60000);
+                  // We add MAIN duration to current time to guess end time if user just clicked link at start
+                  // Note: This assumes trainer clicks roughly when message received.
+                  const end = new Date(now.getTime() + mMin*60000 + wMin*60000); 
                   this.els.resEnd.textContent = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                   this.els.resWarm.textContent = wMin > 0 ? `✅ OUI (${wMin}m)` : "❌ NON";
@@ -596,7 +596,6 @@ const app = {
       SoundEngine.init();
       this.state.level = lvl;
       this.state.durations = { warmup: 0, training: 0, stretching: 0, night: 0 };
-      this.state.plannedStretchDur = 0; // Reset
       
       this.showModal(
           "🔥 Échauffement ?",
@@ -619,10 +618,53 @@ const app = {
       this.els.modal.style.display = 'none';
       this.saveSettings();
 
+      // 1. CALCULATE ALL DURATIONS NOW
+      // Main
+      let mainDur = 0;
+      switch(this.state.level) {
+        case 1: mainDur = this.rand(2, 5); break;
+        case 2: mainDur = this.rand(4, 7); break;
+        case 3: mainDur = this.rand(7, 9); break;
+        case 4: mainDur = 9 * 3600000; break;
+        case 5: mainDur = this.rand(2, 9); break;
+      }
+      this.state.plannedMainDur = mainDur;
+
+      // Warmup
+      let warmDur = 0;
       if (this.state.settings.warmup) {
-          // Warmup Duration calculated here
-          const wDur = this.getWeightedDuration();
-          this.startPhase('warmup', wDur); 
+          warmDur = this.getWeightedDuration();
+          this.state.plannedWarmupDur = warmDur;
+      }
+
+      // Stretch
+      let stretchDur = 0;
+      if (this.state.settings.stretch) {
+          stretchDur = this.getWeightedDuration();
+          this.state.plannedStretchDur = stretchDur;
+      }
+
+      // 2. SEND LINK IMMEDIATELY
+      const mMin = Math.floor(mainDur / 60000);
+      const wMin = Math.floor(warmDur / 60000);
+      const sMin = Math.floor(stretchDur / 60000);
+
+      const payload = `${mMin}-${wMin}-${sMin}`;
+      const encoded = btoa(payload); // Base64 encoding
+      
+      let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
+      if(!cleanPhone) cleanPhone = "33783204184";
+      
+      let baseUrl = window.location.href.split('?')[0];
+      let secretLink = `${baseUrl}?data=${encoded}`;
+
+      let msg = `🔐 *SÉCURITÉ*\n🚀 DÉBUT MISSION\nCliquez sur le lien sécurisé :\n${secretLink}`;
+      
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+
+      // 3. START
+      if (this.state.settings.warmup) {
+          this.startPhase('warmup', warmDur); 
       } else {
           this.startMainTraining();
       }
@@ -695,49 +737,8 @@ const app = {
       ];
       this.setCoachMessage(msgs[Math.floor(Math.random()*msgs.length)]);
 
-      // 1. Calculate Main Duration
-      let dur = 0;
-      switch(this.state.level) {
-        case 1: dur = this.rand(2, 5); break;
-        case 2: dur = this.rand(4, 7); break;
-        case 3: dur = this.rand(7, 9); break;
-        case 4: dur = 9 * 3600000; break;
-        case 5: dur = this.rand(2, 9); break;
-      }
-
-      // 2. Prepare Data for Link (Minutes)
-      const mMin = Math.floor(dur / 60000);
-      
-      // Get Warmup duration (if enabled, we take what was recorded/targeted)
-      // Since Warmup is done (or skipped), we use state.durations.warmup or target.
-      // Wait, if warmup just finished, state.durations.warmup is set in transitionToNext? 
-      // Actually startMainTraining is called inside transitionToNext.
-      // So state.durations.warmup IS set.
-      const wMin = Math.floor(this.state.durations.warmup / 60000);
-
-      // Pre-calculate Stretch Duration (if enabled)
-      let sMin = 0;
-      if (this.state.settings.stretch) {
-          const sDurMs = this.getWeightedDuration();
-          this.state.plannedStretchDur = sDurMs; // Store for later usage
-          sMin = Math.floor(sDurMs / 60000);
-      }
-
-      // 3. Generate Link
-      const payload = `${mMin}-${wMin}-${sMin}`;
-      const encoded = btoa(payload); // Base64 encoding
-      
-      let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
-      if(!cleanPhone) cleanPhone = "33783204184";
-      
-      let baseUrl = window.location.href.split('?')[0];
-      let secretLink = `${baseUrl}?data=${encoded}`;
-
-      let msg = `🔐 *SÉCURITÉ*\n🚀 DÉBUT MISSION\nCliquez sur le lien sécurisé :\n${secretLink}`;
-      
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-
-      this.startPhase('training', dur);
+      // Use pre-calculated duration
+      this.startPhase('training', this.state.plannedMainDur);
   },
 
   startPhase(phaseName, durationMs) {
