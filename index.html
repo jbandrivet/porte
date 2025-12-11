@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v4.2</title>
+  <title>Entraînement Porte v5.1</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -15,6 +15,7 @@
       --whatsapp: #25D366;
       --text-main: #e2e8f0; 
       --text-muted: #94a3b8;
+      --coach-bg: rgba(59, 130, 246, 0.15);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     
@@ -27,8 +28,8 @@
     }
 
     /* Mode OLED */
-    body.oled-mode { background: #000000; }
-    body.oled-mode .card, body.oled-mode h1, body.oled-mode p { opacity: 0; pointer-events: none; }
+    body.oled-mode { background: #000000; cursor: none; }
+    body.oled-mode .card, body.oled-mode h1, body.oled-mode p, body.oled-mode .info-alert, body.oled-mode .coach-message { opacity: 0; pointer-events: none; }
     body.oled-mode .oled-overlay { display: flex; }
 
     .oled-overlay {
@@ -37,32 +38,58 @@
       display: none; flex-direction: column;
       align-items: center; justify-content: center;
       color: #333;
+      user-select: none;
     }
-    .oled-touch-area { width: 100%; height: 100%; position: absolute; }
+    .oled-touch-area { width: 100%; height: 100%; position: absolute; cursor: pointer; }
     .oled-icon { font-size: 5rem; opacity: 0.2; animation: breathe 4s infinite; }
 
     .card {
-      width: min(600px, 100%);
+      width: min(550px, 100%);
       background: rgba(30, 41, 59, 0.85);
-      padding: 24px; border-radius: 20px;
-      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+      padding: 30px; border-radius: 20px;
+      box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.08);
       padding-bottom: 40px;
+      backdrop-filter: blur(10px);
     }
 
-    h1 { margin: 0 0 4px; font-size: 1.8rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p.subtitle { margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { margin: 0 0 6px; font-size: 1.8rem; text-align: center; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.subtitle { margin: 0 0 15px; color: var(--text-muted); font-size: 0.9rem; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 
-    /* ALERTES INFO */
+    /* ZONE COACH */
+    .coach-message {
+        background: var(--coach-bg);
+        border-left: 4px solid #60a5fa;
+        color: #dbeafe;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+        font-style: italic;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+    .coach-title {
+        font-weight: bold;
+        color: #60a5fa;
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        display: block;
+    }
+
     .info-alert {
         background: rgba(245, 158, 11, 0.15);
         border: 1px solid var(--warning);
         color: #fcd34d;
-        padding: 8px;
+        padding: 10px;
         border-radius: 8px;
         text-align: center;
         font-size: 0.85rem;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
+        font-weight: 500;
     }
     .ios-note {
         font-size: 0.8rem;
@@ -76,18 +103,18 @@
     }
 
     .status-display { 
-        text-align: center; margin: 0 0 20px; padding: 20px; 
-        border-radius: 16px; background: rgba(59, 130, 246, 0.05); 
-        border: 1px solid rgba(59, 130, 246, 0.1); 
+        text-align: center; margin: 0 0 15px; padding: 25px; 
+        border-radius: 16px; background: rgba(255, 255, 255, 0.03); 
+        border: 1px solid rgba(255, 255, 255, 0.05); 
         position: relative; overflow: hidden; 
     }
     
-    .status-icon { font-size: 50px; display: block; margin-bottom: 5px; }
-    .status-text { font-size: 1.3rem; font-weight: 700; color: #60a5fa; margin-bottom: 4px; text-transform: uppercase; }
-    .elapsed-time { font-family: monospace; font-size: 1.8rem; letter-spacing: 1px; color: var(--text-main); font-weight: 700; }
+    .status-icon { font-size: 56px; display: block; margin-bottom: 8px; transition: transform 0.3s; }
+    .status-text { font-size: 1.4rem; font-weight: 700; color: #60a5fa; margin-bottom: 4px; text-transform: uppercase; }
+    .elapsed-time { font-family: monospace; font-size: 2rem; letter-spacing: 2px; color: var(--text-main); font-weight: 700; }
     
     @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
-    .active-ring::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); animation: pulse-ring 2s infinite; pointer-events: none; }
+    .active-ring::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--primary); animation: pulse-ring 2s infinite; pointer-events: none; }
 
     .btn-grid { display: flex; flex-direction: column; gap: 12px; }
     button {
@@ -96,14 +123,18 @@
       display: flex; align-items: center; justify-content: center; gap: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       touch-action: manipulation;
+      transition: all 0.2s ease;
     }
     button:active { transform: scale(0.96); }
+    @media (hover: hover) {
+        button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); filter: brightness(1.1); }
+    }
     
     .btn-primary { background: var(--primary); }
     .btn-danger { background: var(--danger); }
     .btn-success { background: var(--success); }
     .btn-warning { background: var(--warning); color: #1e293b; }
-    .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-main); }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); }
     .btn-night { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
     .btn-oled { background: #000; border: 1px solid #333; margin-top: 5px; flex-direction: column; gap: 5px; }
 
@@ -117,23 +148,64 @@
     }
     @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
 
-    .badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; margin-left: auto; }
+    .badge { background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; margin-left: auto; }
 
-    .settings-panel { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
-    input[type=text] { width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px; color: white; margin-bottom: 12px; font-size: 1rem; }
+    .settings-panel { margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    input[type=text], input[type=password], input[type=number] { width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px; color: white; margin-bottom: 12px; font-size: 1rem; }
     
     .checkbox-row { display: flex; justify-content: space-around; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted); }
-    .checkbox-label { display: flex; align-items: center; gap: 8px; padding: 5px; }
-    input[type="checkbox"] { transform: scale(1.3); accent-color: var(--primary); }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; border-radius: 8px; transition: background 0.2s; }
+    .checkbox-label:hover { background: rgba(255,255,255,0.05); }
+    input[type="checkbox"] { transform: scale(1.3); accent-color: var(--primary); cursor: pointer; }
 
-    .program-options {
-        background: rgba(59, 130, 246, 0.1);
-        padding: 15px; border-radius: 12px;
-        margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.2);
-        display: flex; flex-direction: column; gap: 10px;
+    /* Modal */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 9000;
+        display: none;
+        align-items: center; justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(5px);
     }
+    .modal-card {
+        background: #1e293b;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 30px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        animation: fadeIn 0.3s ease;
+    }
+    .modal-title { font-size: 1.4rem; color: white; margin-bottom: 10px; font-weight: bold; }
+    .modal-text { color: #94a3b8; margin-bottom: 25px; line-height: 1.5; }
 
-    /* Alerts */
+    /* Trainer View */
+    .trainer-header {
+        background: rgba(17, 24, 39, 0.8);
+        border: 1px solid #374151;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .result-box {
+        margin-top: 15px;
+        padding: 20px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid #10b981;
+        color: #fff;
+        border-radius: 10px;
+        text-align: left;
+        display: none;
+    }
+    .result-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .result-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .res-label { color: #94a3b8; font-size: 0.9rem; }
+    .res-val { font-weight: bold; }
+
     .fullscreen-alert {
       position: fixed; inset: 0; background: var(--danger); z-index: 10000;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -142,9 +214,10 @@
     .fullscreen-alert.active { display: flex; animation: flash 0.5s infinite; }
     .fullscreen-alert.soft-active { display: flex; background: var(--warning); }
     
-    .alert-content { background: white; color: black; padding: 30px; width: 100%; max-width: 400px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .alert-content { background: white; color: black; padding: 40px; width: 100%; max-width: 400px; border-radius: 20px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.6); }
     @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
     @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.15; } 50% { transform: scale(1.1); opacity: 0.3; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
     .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #334155; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: 0.3s; z-index: 10001; width: max-content; }
     .toast.show { transform: translateX(-50%) translateY(0); }
@@ -153,28 +226,44 @@
 </head>
 <body>
 
+<!-- Alert Layer -->
 <div id="alertLayer" class="fullscreen-alert">
   <div class="alert-content">
     <div style="font-size: 60px;" id="alertIcon">🔔</div>
-    <h2 style="font-size: 1.8rem; margin: 10px 0;" id="alertTitle">TERMINÉ</h2>
-    <p id="alertMsg">Appuyez pour continuer</p>
+    <h2 style="font-size: 2rem; margin: 15px 0;" id="alertTitle">TERMINÉ</h2>
+    <p id="alertMsg" style="font-size: 1.2rem;">Appuyez pour continuer</p>
   </div>
 </div>
 
+<!-- OLED Saver Layer -->
 <div id="oledOverlay" class="oled-overlay">
   <div class="oled-touch-area" id="oledTouchArea"></div>
   <div class="oled-icon">🚪</div>
-  <p style="color: #444; margin-top: 20px;">Double-clic pour réveiller</p>
+  <p style="color: #444; margin-top: 20px;">Double-clic (ou Double-Tape) pour réveiller</p>
+</div>
+
+<!-- MODAL CHOIX -->
+<div id="choiceModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="modalTitle" class="modal-title">Titre</div>
+        <div id="modalText" class="modal-text">Texte</div>
+        <div class="btn-grid">
+            <button id="modalBtnYes" class="btn-primary">Accepter</button>
+            <button id="modalBtnNo" class="btn-secondary">Refuser</button>
+        </div>
+    </div>
 </div>
 
 <main class="card">
   <h1>🚪 Entraînement Porte</h1>
-  <p class="subtitle">Discipline • Probabilités • Endurance</p>
+  <p class="subtitle">Sécurisé • Compatible Mobile & PC</p>
 
-  <div class="info-alert">
-      ⚡ <strong>RAPPEL :</strong> Branchez le téléphone pour éviter la coupure !
+  <!-- Memo Chargeur -->
+  <div class="info-alert" id="memoCharge">
+      ⚡ <strong>RAPPEL :</strong> Branchez l'appareil sur secteur pour éviter la coupure !
   </div>
 
+  <!-- Status (Caché en mode admin) -->
   <div id="statusPanel" class="status-display">
     <div class="status-icon" id="statusIcon">⏱️</div>
     <div class="status-text" id="statusText">En attente</div>
@@ -182,41 +271,75 @@
     <div id="phaseBadge" style="margin-top:8px; font-size:0.8rem; opacity:0.7">Prêt à démarrer</div>
   </div>
 
-  <div id="view-levels">
-    <div class="program-options">
-        <label class="checkbox-label">
-            <input type="checkbox" id="optWarmup" onchange="app.saveSettings()"> 
-            <span>🔥 + Échauffement (20-45m)</span>
-        </label>
-        
-        <label class="checkbox-label">
-            <input type="checkbox" id="optStretch" onchange="app.saveSettings()"> 
-            <span>🧘 + Étirements (20-45m)</span>
-        </label>
-        
-        <div style="font-size:0.75rem; color:#60a5fa; margin-top:5px; margin-left:28px">
-            *Probabilité : 60% >40mn | 30% >30mn | 10% >20mn
-        </div>
-    </div>
+  <!-- ZONE DE MESSAGE DU COACH -->
+  <div id="coachBox" class="coach-message">
+      <span class="coach-title">L'Entraîneur</span>
+      <span id="coachText">...</span>
+  </div>
 
+  <!-- Ecran 1 : Choix Niveaux (Mode Soumis) -->
+  <div id="view-levels">
     <div class="btn-grid">
-        <button onclick="app.selectLevel(1)" class="btn-primary">Niveau 1 <span class="badge">2-5h</span></button>
-        <button onclick="app.selectLevel(2)" class="btn-primary">Niveau 2 <span class="badge">4-7h</span></button>
-        <button onclick="app.selectLevel(3)" class="btn-primary">Niveau 3 <span class="badge">7-9h</span></button>
-        <button onclick="app.selectLevel(4)" class="btn-primary">Niveau 4 <span class="badge">9h Fixe</span></button>
-        <button onclick="app.selectLevel(5)" class="btn-night">Niveau 5 <span class="badge">2-9h Chaos</span></button>
+        <label style="color: #94a3b8; text-align: center; margin-bottom: 5px;">Sélectionnez votre niveau :</label>
+        <button onclick="app.triggerSelection(1)" class="btn-primary">Niveau 1 <span class="badge">2-5h</span></button>
+        <button onclick="app.triggerSelection(2)" class="btn-primary">Niveau 2 <span class="badge">4-7h</span></button>
+        <button onclick="app.triggerSelection(3)" class="btn-primary">Niveau 3 <span class="badge">7-9h</span></button>
+        <button onclick="app.triggerSelection(4)" class="btn-primary">Niveau 4 <span class="badge">9h Fixe</span></button>
+        <button onclick="app.triggerSelection(5)" class="btn-night">Niveau 5 <span class="badge">2-9h Chaos</span></button>
     </div>
   </div>
 
+  <!-- Ecran Remote Admin (Via lien WhatsApp) -->
+  <div id="view-remote-admin" class="hidden">
+      <div class="trainer-header">
+          <h3 style="color:#60a5fa; margin:0 0 10px;">🔐 ACCÈS ENTRAÎNEUR</h3>
+          <p style="color:#94a3b8; margin:0; font-size:0.9rem">Données cryptées détectées.</p>
+      </div>
+      
+      <!-- Auth -->
+      <div id="admin-auth">
+          <input type="password" id="adminPass" placeholder="Mot de Passe" style="text-align:center; font-size:1.2rem; letter-spacing:3px;">
+          <button onclick="app.checkRemoteAdmin()" class="btn-primary" style="margin-top:15px">Déverrouiller</button>
+      </div>
+
+      <!-- Resultat -->
+      <div id="admin-result" class="hidden">
+          <div class="result-box" style="display:block">
+              <!-- Main -->
+              <div class="result-row" style="align-items:center;">
+                  <span class="res-label">🚪 Durée Garde :</span>
+                  <span id="resMain" style="font-size:1.5rem; color:#10b981">...</span>
+              </div>
+              <div class="result-row">
+                  <span class="res-label">🏁 Fin estimée :</span>
+                  <span id="resEnd" class="res-val">...</span>
+              </div>
+              <!-- Warmup -->
+              <div class="result-row">
+                  <span class="res-label">🔥 Échauffement :</span>
+                  <span id="resWarm" class="res-val">...</span>
+              </div>
+              <!-- Stretch -->
+              <div class="result-row">
+                  <span class="res-label">🧘 Étirements :</span>
+                  <span id="resStretch" class="res-val">...</span>
+              </div>
+          </div>
+          <button onclick="window.location.href=window.location.href.split('?')[0]" class="btn-secondary" style="margin-top:20px">Retour à l'accueil</button>
+      </div>
+  </div>
+
+  <!-- Ecran 2 : En cours -->
   <div id="view-running" class="btn-grid hidden">
     <button onclick="app.toggleOledMode()" class="btn-oled" style="height: 120px; font-size: 1.3rem;">
         🌑 ÉTEINDRE ÉCRAN
-        <span style="font-size:0.8rem; font-weight:normal; color:#888;">(Économie Batterie)</span>
+        <span style="font-size:0.8rem; font-weight:normal; color:#888;">(Économie Batterie / OLED)</span>
     </button>
-    <div style="text-align:center; color:#ef4444; font-size:0.8rem; margin:10px 0; opacity:0.8; text-transform:uppercase">⚠️ Aucune Pause Autorisée</div>
+    <div style="text-align:center; color:#ef4444; font-size:0.8rem; margin:10px 0; opacity:0.8; text-transform:uppercase; font-weight:bold;">⚠️ Mode Strict : Pause Interdite</div>
     <button onclick="app.confirmStop()" class="btn-danger">🛑 Abandonner</button>
   </div>
 
+  <!-- Ecran 3 : Résultat Garde -->
   <div id="view-result" class="btn-grid hidden">
     <div id="rating-area">
         <p style="text-align:center; color:white; font-size:1.1rem">Résultat de la session ?</p>
@@ -227,15 +350,17 @@
         <button onclick="app.finish(null)" class="btn-secondary">⚠️ Ne pas noter</button>
     </div>
 
+    <!-- ZONE D'ENVOI WHATSAPP -->
     <div id="whatsapp-area" class="hidden" style="margin-top:20px; animation: fadeIn 0.5s">
-        <p style="text-align:center; color:#25D366; margin-bottom:10px">✅ Résultat enregistré</p>
+        <p style="text-align:center; color:#25D366; margin-bottom:10px; font-weight:bold">✅ Résultat enregistré</p>
         <button onclick="app.triggerWhatsapp()" class="btn-whatsapp">
             📲 ENVOYER LE RAPPORT<br>
-            <span style="font-size:0.8rem">Cliquer pour ouvrir WhatsApp</span>
+            <span style="font-size:0.8rem; font-weight:normal">Cliquer pour ouvrir WhatsApp</span>
         </button>
         <button onclick="app.checkNightOption()" class="btn-secondary" style="margin-top:10px">Continuer sans envoyer</button>
     </div>
 
+    <!-- ZONE PUNITION (1 chance sur 3) -->
     <div id="redo-area" class="hidden" style="margin-top:20px; animation: fadeIn 0.5s; background: rgba(239, 68, 68, 0.1); padding: 20px; border-radius: 12px; border: 1px solid #ef4444;">
         <h2 style="color:#ef4444; text-align:center; margin:0 0 10px;">🎲 PAS DE CHANCE !</h2>
         <p style="text-align:center; font-size:1.1rem;">La "roulette russe" a parlé.<br>Vous devez <strong>REFAIRE</strong> une session.</p>
@@ -243,13 +368,15 @@
     </div>
   </div>
 
+  <!-- Ecran 4 : Nocturne -->
   <div id="view-night" class="btn-grid hidden">
-    <div style="text-align:center; margin-bottom:15px; color:#a78bfa">Session longue détectée.<br>Enchaîner ?</div>
-    <button onclick="app.startNightSession()" class="btn-night">🌙 Lancer Nocturne (1-3h)</button>
+    <div style="text-align:center; margin-bottom:15px; color:#a78bfa; font-size:1.1rem">Session longue détectée.<br>Enchaîner ?</div>
+    <button onclick="app.startNightSession()" class="btn-night" style="padding: 20px">🌙 Lancer Nocturne (1-3h)</button>
     <button onclick="app.resetUI()" class="btn-secondary">🏁 Non, terminer</button>
   </div>
 
-  <div class="settings-panel">
+  <!-- Paramètres -->
+  <div class="settings-panel" id="settingsPanel">
     <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp</label>
     <input type="text" id="phoneInput" value="33783204184" onchange="app.saveSettings()">
     
@@ -259,8 +386,9 @@
       <label class="checkbox-label"><input type="checkbox" id="checkDate" checked onchange="app.saveSettings()"> Date</label>
     </div>
 
+    <!-- NOTE IPHONE -->
     <div class="ios-note">
-        ⚠️ <strong>iPhone :</strong> Le petit switch "Silencieux" sur le côté doit être DÉSACTIVÉ (Pas de rouge) sinon pas de son !
+        ⚠️ <strong>iPhone :</strong> Désactivez le mode "Silencieux" (bouton latéral) sinon l'alarme ne sonnera pas !
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -309,7 +437,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v4.2 */
+/** LOGIC v5.1 */
 const app = {
   state: {
     phase: 'idle', 
@@ -322,7 +450,11 @@ const app = {
     alarmInt: null,
     settings: { phone: '33783204184', sound: true, vib: true, date: true, warmup: false, stretch: false },
     stats: { total: 0, success: 0, lastDur: 0 },
-    lastResult: null 
+    lastResult: null,
+    durations: { warmup: 0, training: 0, stretching: 0, night: 0 },
+    plannedStretchDur: 0, // NEW: calculated at start
+    adminKey: "Hubble:2001",
+    remoteData: null // Store encoded string from URL
   },
   
   els: {
@@ -331,19 +463,21 @@ const app = {
     elapsed: document.getElementById('elapsedTime'),
     phaseBadge: document.getElementById('phaseBadge'),
     statusPanel: document.getElementById('statusPanel'),
+    coachBox: document.getElementById('coachBox'),
+    coachText: document.getElementById('coachText'),
     views: {
       levels: document.getElementById('view-levels'),
       running: document.getElementById('view-running'),
       result: document.getElementById('view-result'),
-      night: document.getElementById('view-night')
+      night: document.getElementById('view-night'),
+      remoteAdmin: document.getElementById('view-remote-admin')
     },
     inputs: {
       phone: document.getElementById('phoneInput'),
       sound: document.getElementById('checkSound'),
       vib: document.getElementById('checkVib'),
       date: document.getElementById('checkDate'),
-      warmup: document.getElementById('optWarmup'),
-      stretch: document.getElementById('optStretch')
+      adminPass: document.getElementById('adminPass')
     },
     alert: {
         layer: document.getElementById('alertLayer'),
@@ -354,7 +488,24 @@ const app = {
     oled: document.getElementById('oledOverlay'),
     waArea: document.getElementById('whatsapp-area'),
     redoArea: document.getElementById('redo-area'),
-    ratingArea: document.getElementById('rating-area')
+    ratingArea: document.getElementById('rating-area'),
+    settingsPanel: document.getElementById('settingsPanel'),
+    memoCharge: document.getElementById('memoCharge'),
+    
+    // Modal
+    modal: document.getElementById('choiceModal'),
+    modalTitle: document.getElementById('modalTitle'),
+    modalText: document.getElementById('modalText'),
+    modalBtnYes: document.getElementById('modalBtnYes'),
+    modalBtnNo: document.getElementById('modalBtnNo'),
+    
+    // Remote
+    adminAuth: document.getElementById('admin-auth'),
+    adminResult: document.getElementById('admin-result'),
+    resMain: document.getElementById('resMain'),
+    resEnd: document.getElementById('resEnd'),
+    resWarm: document.getElementById('resWarm'),
+    resStretch: document.getElementById('resStretch')
   },
 
   init() {
@@ -362,12 +513,31 @@ const app = {
     this.updateStatsUI();
     this.requestWakeLock();
     
+    // CHECK URL FOR DATA
+    const urlParams = new URLSearchParams(window.location.search);
+    const missionData = urlParams.get('data');
+    
+    if(missionData) {
+        // Mode Entraîneur via lien
+        this.state.remoteData = missionData;
+        this.showView('remoteAdmin');
+        this.els.statusPanel.style.display = 'none';
+        this.els.memoCharge.style.display = 'none';
+    } else {
+        // Mode Normal
+        this.resetUI();
+    }
+    
     let lastTap = 0;
-    document.getElementById('oledTouchArea').addEventListener('click', (e) => {
-      const currentTime = new Date().getTime();
-      if (currentTime - lastTap < 500) this.toggleOledMode();
-      lastTap = currentTime;
-    });
+    const handleDouble = (e) => {
+        const currentTime = new Date().getTime();
+        if (currentTime - lastTap < 500) this.toggleOledMode();
+        lastTap = currentTime;
+    };
+    
+    const oledArea = document.getElementById('oledTouchArea');
+    oledArea.addEventListener('click', handleDouble);
+    oledArea.addEventListener('touchend', handleDouble);
 
     this.els.alert.layer.addEventListener('click', () => this.stopAlert());
     
@@ -378,32 +548,117 @@ const app = {
     });
   },
 
+  // --- REMOTE ADMIN LOGIC ---
+  checkRemoteAdmin() {
+      if(this.els.inputs.adminPass.value === this.state.adminKey) {
+          try {
+              // Decode Base64 string "M-W-S"
+              const decoded = atob(this.state.remoteData);
+              const parts = decoded.split('-');
+              
+              if(parts.length === 3) {
+                  const mMin = parseInt(parts[0]);
+                  const wMin = parseInt(parts[1]);
+                  const sMin = parseInt(parts[2]);
+                  
+                  // Display
+                  const h = Math.floor(mMin / 60);
+                  const m = mMin % 60;
+                  this.els.resMain.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                  
+                  // Approx end time (Assuming link clicked recently - not perfect but indicative)
+                  // For exact end time, we would need to encode startTime timestamp, 
+                  // but user said "heur de fin", so we assume relative to now or just duration.
+                  // Let's stick to Duration strictly as requested.
+                  // Adding fake end time based on "if started now"
+                  const now = new Date();
+                  const end = new Date(now.getTime() + mMin*60000);
+                  this.els.resEnd.textContent = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                  this.els.resWarm.textContent = wMin > 0 ? `✅ OUI (${wMin}m)` : "❌ NON";
+                  this.els.resStretch.textContent = sMin > 0 ? `✅ OUI (${sMin}m)` : "❌ NON";
+
+                  this.els.adminAuth.classList.add('hidden');
+                  this.els.adminResult.classList.remove('hidden');
+              } else {
+                  this.toast('❌ Données corrompues');
+              }
+          } catch(e) {
+              this.toast('❌ Erreur de lecture');
+          }
+      } else {
+          this.toast('❌ Mot de passe incorrect');
+      }
+  },
+
+  // --- SELECTION FLOW ---
+  triggerSelection(lvl) {
+      SoundEngine.init();
+      this.state.level = lvl;
+      this.state.durations = { warmup: 0, training: 0, stretching: 0, night: 0 };
+      this.state.plannedStretchDur = 0; // Reset
+      
+      this.showModal(
+          "🔥 Échauffement ?",
+          "L'entraîneur recommande de préparer le corps avant la session.",
+          () => { this.state.settings.warmup = true; this.askStretch(); },
+          () => { this.state.settings.warmup = false; this.askStretch(); }
+      );
+  },
+
+  askStretch() {
+      this.showModal(
+          "🧘 Étirements ?",
+          "Voulez-vous inclure une phase de récupération à la fin ?",
+          () => { this.state.settings.stretch = true; this.finalizeSelection(); },
+          () => { this.state.settings.stretch = false; this.finalizeSelection(); }
+      );
+  },
+
+  finalizeSelection() {
+      this.els.modal.style.display = 'none';
+      this.saveSettings();
+
+      if (this.state.settings.warmup) {
+          // Warmup Duration calculated here
+          const wDur = this.getWeightedDuration();
+          this.startPhase('warmup', wDur); 
+      } else {
+          this.startMainTraining();
+      }
+  },
+
+  showModal(title, text, onYes, onNo) {
+      this.els.modalTitle.textContent = title;
+      this.els.modalText.textContent = text;
+      this.els.modal.style.display = 'flex';
+      this.els.modalBtnYes.onclick = onYes;
+      this.els.modalBtnNo.onclick = onNo;
+  },
+
+  // --- CORE LOGIC ---
   saveSettings() {
     const s = {
       phone: this.els.inputs.phone.value,
       sound: this.els.inputs.sound.checked,
       vib: this.els.inputs.vib.checked,
       date: this.els.inputs.date.checked,
-      warmup: this.els.inputs.warmup.checked,
-      stretch: this.els.inputs.stretch.checked,
       stats: this.state.stats
     };
-    localStorage.setItem('gd_settings_v4', JSON.stringify(s));
-    this.state.settings = s;
+    localStorage.setItem('gd_settings_v5', JSON.stringify(s));
+    this.state.settings = { ...this.state.settings, ...s };
   },
 
   loadSettings() {
-    const data = localStorage.getItem('gd_settings_v4');
+    const data = localStorage.getItem('gd_settings_v5');
     if(data) {
       const s = JSON.parse(data);
       if(s.phone) this.els.inputs.phone.value = s.phone;
       this.els.inputs.sound.checked = s.sound;
       this.els.inputs.vib.checked = s.vib;
       this.els.inputs.date.checked = s.date;
-      this.els.inputs.warmup.checked = s.warmup;
-      this.els.inputs.stretch.checked = s.stretch;
       if(s.stats) this.state.stats = s.stats;
-      this.state.settings = s;
+      this.state.settings = { ...this.state.settings, ...s };
     }
   },
 
@@ -418,33 +673,29 @@ const app = {
   getWeightedDuration() {
       const r = Math.random() * 100;
       let min, max; 
-
-      if (r < 60) {
-          // 60% : 40-45 mn
-          min = 40; max = 45;
-      } else if (r < 90) {
-          // 30% : 30-40 mn
-          min = 30; max = 40;
-      } else {
-          // 10% : 20-30 mn
-          min = 20; max = 30;
-      }
-
-      const minutes = Math.floor(Math.random() * (max - min + 1)) + min;
-      return minutes * 60 * 1000;
+      if (r < 60) { min = 40; max = 45; } 
+      else if (r < 90) { min = 30; max = 40; } 
+      else { min = 20; max = 30; }
+      return (Math.floor(Math.random() * (max - min + 1)) + min) * 60 * 1000;
   },
 
-  selectLevel(lvl) {
-    SoundEngine.init(); 
-    this.state.level = lvl;
-    if (this.state.settings.warmup) {
-        this.startPhase('warmup', this.getWeightedDuration()); 
-    } else {
-        this.startMainTraining();
-    }
+  setCoachMessage(msg) {
+      if(msg) {
+          this.els.coachText.textContent = msg;
+          this.els.coachBox.style.display = 'block';
+      } else {
+          this.els.coachBox.style.display = 'none';
+      }
   },
 
   startMainTraining() {
+      const msgs = [
+          "Ton entraînement commence. Pense aux mecs en train de dormir ou se faisant sucer ou en train de baiser pendant que tu trimes",
+          "Ton entraînement va commencer. Il va te permettre de garder l’habitude de rester à la porte quand un Maître voudra te punir."
+      ];
+      this.setCoachMessage(msgs[Math.floor(Math.random()*msgs.length)]);
+
+      // 1. Calculate Main Duration
       let dur = 0;
       switch(this.state.level) {
         case 1: dur = this.rand(2, 5); break;
@@ -453,6 +704,39 @@ const app = {
         case 4: dur = 9 * 3600000; break;
         case 5: dur = this.rand(2, 9); break;
       }
+
+      // 2. Prepare Data for Link (Minutes)
+      const mMin = Math.floor(dur / 60000);
+      
+      // Get Warmup duration (if enabled, we take what was recorded/targeted)
+      // Since Warmup is done (or skipped), we use state.durations.warmup or target.
+      // Wait, if warmup just finished, state.durations.warmup is set in transitionToNext? 
+      // Actually startMainTraining is called inside transitionToNext.
+      // So state.durations.warmup IS set.
+      const wMin = Math.floor(this.state.durations.warmup / 60000);
+
+      // Pre-calculate Stretch Duration (if enabled)
+      let sMin = 0;
+      if (this.state.settings.stretch) {
+          const sDurMs = this.getWeightedDuration();
+          this.state.plannedStretchDur = sDurMs; // Store for later usage
+          sMin = Math.floor(sDurMs / 60000);
+      }
+
+      // 3. Generate Link
+      const payload = `${mMin}-${wMin}-${sMin}`;
+      const encoded = btoa(payload); // Base64 encoding
+      
+      let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
+      if(!cleanPhone) cleanPhone = "33783204184";
+      
+      let baseUrl = window.location.href.split('?')[0];
+      let secretLink = `${baseUrl}?data=${encoded}`;
+
+      let msg = `🔐 *SÉCURITÉ*\n🚀 DÉBUT MISSION\nCliquez sur le lien sécurisé :\n${secretLink}`;
+      
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+
       this.startPhase('training', dur);
   },
 
@@ -521,27 +805,31 @@ const app = {
   },
 
   transitionToNext() {
+    this.state.durations[this.state.phase] = this.state.elapsed;
     const p = this.state.phase;
     
     if (p === 'warmup') {
-      this.toast("Fin échauffement. Démarrage...");
-      setTimeout(() => this.startMainTraining(), 500);
+      this.setCoachMessage("Échauffement terminé. Profite bien de ton entraînement en gardant les pieds au sol et les yeux fixés sur la porte");
+      this.toast("Fin échauffement...");
+      setTimeout(() => this.startMainTraining(), 2000); 
       
     } else if (p === 'training') {
       this.state.stats.lastDur = this.state.elapsed; 
       
       if (this.state.settings.stretch) {
-          this.toast("Session finie. Place aux étirements...");
-          setTimeout(() => this.startPhase('stretching', this.getWeightedDuration()), 500);
+          this.setCoachMessage("Fin de ton entraînement. Tu vas pouvoir faire tes étirements en restant bien planté devant la porte et jouir de tes douleurs et de la fatigue");
+          // Use Pre-calculated Duration!
+          setTimeout(() => this.startPhase('stretching', this.state.plannedStretchDur), 2000);
       } else {
           this.showResultScreen();
       }
 
     } else if (p === 'stretching') {
-      this.toast("Entraînement complet terminé.");
+      this.setCoachMessage("Fin de tes étirements. Tu peux aller dormir. Endors toi si tu peux");
       this.showResultScreen();
       
     } else if (p === 'night') {
+      this.setCoachMessage("Session nocturne terminée.");
       this.showResultScreen();
     }
   },
@@ -555,23 +843,26 @@ const app = {
   },
 
   confirmStop() {
-    if(confirm("Abandonner l'entraînement ?\n(Un rapport d'échec sera envoyé)")) {
+    if(confirm("Abandonner l'entraînement ?")) {
       clearInterval(this.state.timerId);
       this.els.statusPanel.classList.remove('active-ring');
-      
-      // AUTO REPORT
+      this.state.durations[this.state.phase] = this.state.elapsed;
+
       let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
       if(!cleanPhone) cleanPhone = "33783204184";
-      let dur = this.formatTime(this.state.elapsed);
+      
+      let d = this.state.durations;
+      let total = d.warmup + d.training + d.stretching + d.night;
       let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
-      let msg = `❌ *ABANDON / ÉCHEC*\n🚪 Entraînement Porte\n⏱️ Tenu : ${dur}\n${date}`;
+      
+      let msg = `❌ *ABANDON / ÉCHEC*\n🚪 Entraînement Porte\n⏱️ Total effectué : ${this.formatTime(total)}\n`;
+      msg += `(Arrêt pendant phase : ${this.state.phase})\n${date}`;
+      
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
 
-      // Log stats
       this.state.stats.total++;
       this.saveSettings();
       this.updateStatsUI();
-
       this.resetUI();
     }
   },
@@ -586,15 +877,12 @@ const app = {
         
         this.els.ratingArea.classList.add('hidden');
         
-        // 1 Chance sur 3 de punition
         const badLuck = Math.floor(Math.random() * 3) === 0;
-
         if (badLuck) {
             this.els.redoArea.classList.remove('hidden');
         } else {
             this.els.waArea.classList.remove('hidden');
         }
-
     } else {
         this.checkNightOption();
     }
@@ -604,20 +892,28 @@ const app = {
     let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
     if(!cleanPhone) cleanPhone = "33783204184"; 
 
-    let type = this.state.phase === 'night' ? '🌙 Nocturne' : '🚪 Entraînement Porte';
-    if(this.state.settings.stretch && this.state.phase !== 'night') type += ' + Étirements';
+    let d = this.state.durations;
+    let total = d.warmup + d.training + d.stretching + d.night;
     
+    let parts = [];
+    if(d.warmup > 0) parts.push(`🔥 ${this.formatShort(d.warmup)}`);
+    if(d.training > 0) parts.push(`🚪 ${this.formatShort(d.training)}`);
+    if(d.stretching > 0) parts.push(`🧘 ${this.formatShort(d.stretching)}`);
+    if(d.night > 0) parts.push(`🌙 ${this.formatShort(d.night)}`);
+
     let status = this.state.lastResult ? '✅ SUCCÈS' : '❌ ÉCHEC';
-    let dur = this.formatTime(this.state.stats.lastDur);
     let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
     
-    let msg = `*Rapport Porte*\n${type}\nDurée: ${dur}\nRésultat: ${status}\n${date}`;
+    let msg = `*Rapport Porte*\n⏱️ Total : ${this.formatTime(total)}\n`;
+    if(parts.length > 0) msg += `(${parts.join(' + ')})\n`;
+    msg += `Résultat : ${status}\n${date}`;
     
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   },
 
   checkNightOption() {
-    if(this.state.phase !== 'night' && this.state.stats.lastDur > 2*3600000) {
+    if(this.state.phase !== 'night' && this.state.durations.training > 2*3600000) {
+        this.setCoachMessage("Fin de ton entraînement. L’entraîneur te recommande d’enchaîner avec un second entraînement");
         this.showView('night');
     } else {
         this.resetUI();
@@ -639,12 +935,20 @@ const app = {
         if ('wakeLock' in navigator) {
             this.state.wakeLock = await navigator.wakeLock.request('screen');
         }
-    } catch (e) { console.log('WakeLock refusé ou indisponible'); }
+    } catch (e) { console.log('WakeLock refusé'); }
   },
 
   showView(viewName) {
     Object.values(this.els.views).forEach(el => el.classList.add('hidden'));
     this.els.views[viewName].classList.remove('hidden');
+    
+    if(viewName === 'levels') {
+        this.els.settingsPanel.style.display = 'block';
+        this.els.statusPanel.style.display = 'block';
+        this.els.memoCharge.style.display = 'block';
+    } else {
+        this.els.settingsPanel.style.display = 'none';
+    }
   },
 
   updateUIForPhase(p) {
@@ -652,6 +956,7 @@ const app = {
       this.els.statusIcon.textContent = '🔥';
       this.els.statusText.textContent = 'Échauffement';
       this.els.phaseBadge.textContent = 'Préparation aléatoire';
+      this.setCoachMessage("Bon échauffement. Prépare bien tes pieds à supporter l’entraînement qui va suivre");
     } else if (p === 'training') {
       this.els.statusIcon.textContent = '🚪';
       this.els.statusText.textContent = 'DEVANT LA PORTE';
@@ -673,6 +978,7 @@ const app = {
     this.els.elapsed.textContent = '00:00:00';
     this.els.phaseBadge.textContent = 'En attente';
     this.els.statusPanel.classList.remove('active-ring');
+    this.setCoachMessage(""); 
   },
 
   formatTime(ms) {
@@ -680,6 +986,13 @@ const app = {
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
     return `${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+  },
+
+  formatShort(ms) {
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    if(h > 0) return `${h}h${m.toString().padStart(2,'0')}`;
+    return `${m}m`;
   },
   
   toast(msg) {
