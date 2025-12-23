@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v6.1</title>
+  <title>Entraînement Porte v6.3</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -96,6 +96,16 @@
         font-size: 0.85rem;
         margin-bottom: 20px;
         font-weight: 500;
+    }
+    .ios-note {
+        font-size: 0.8rem;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        padding: 8px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        text-align: center;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .status-display { 
@@ -226,7 +236,7 @@
 
 <main class="card">
   <h1>🚪 Entraînement Porte</h1>
-  <p class="subtitle">Version 6.1 • Discipline</p>
+  <p class="subtitle">Version 6.3 • Discipline</p>
 
   <!-- Memo Chargeur -->
   <div class="info-alert" id="memoCharge">
@@ -332,8 +342,12 @@
   <!-- Ecran 6 : Sleep Fail Reporting -->
   <div id="view-sleep-report" class="btn-grid hidden">
       <h2 style="color:#ef4444; text-align:center">SIGNALEMENT</h2>
-      <p style="text-align:center; font-size:0.9rem">"Je n’ai pas réussi à m’endormir. Je me signale comme éveillé et mérite d’être puni."</p>
       
+      <!-- New Alert style msg -->
+      <div style="background:rgba(239, 68, 68, 0.15); border:1px solid #ef4444; padding:15px; border-radius:10px; margin-bottom:20px;">
+          <p style="color:#fca5a5; font-size:0.9rem; margin:0; font-style:italic;" id="fail-reason-text">...</p>
+      </div>
+
       <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:10px 0;">
           <label style="display:block; margin-bottom:5px; color:#cbd5e1">Heure de ton réveil :</label>
           <input type="time" id="wakeupTime" style="font-size:1.5rem; text-align:center">
@@ -358,10 +372,23 @@
   <div class="settings-panel" id="settingsPanel">
     <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:#cbd5e1">Numéro WhatsApp</label>
     <input type="text" id="phoneInput" value="33783204184" onchange="app.saveSettings()">
+    
     <div class="checkbox-row">
       <label class="checkbox-label"><input type="checkbox" id="checkSound" checked onchange="app.saveSettings()"> Son</label>
       <label class="checkbox-label"><input type="checkbox" id="checkVib" checked onchange="app.saveSettings()"> Vib</label>
+      <label class="checkbox-label"><input type="checkbox" id="checkDate" checked onchange="app.saveSettings()"> Date</label>
     </div>
+
+    <!-- NOTE IPHONE -->
+    <div class="ios-note">
+        ⚠️ <strong>iPhone :</strong> Désactivez le mode "Silencieux" (bouton latéral) sinon l'alarme ne sonnera pas !
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <button onclick="app.testAlerts()" class="btn-secondary" style="font-size:0.9rem; padding:10px">🔔 Tester Son</button>
+        <button onclick="app.toggleOledMode()" class="btn-secondary" style="font-size:0.9rem; padding:10px; background:#000; border:1px solid #444">🌑 Test Écran</button>
+    </div>
+
     <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#64748b">
        Total Sessions: <span id="stTotal">0</span>
     </div>
@@ -393,16 +420,21 @@ const SoundEngine = {
   playAlarmSequence() {
     this.init();
     const now = this.ctx.currentTime;
-    // Agressive alarm
     for(let i=0; i<6; i++) { 
         this.beep(now + i*0.8, 0.1, 800); 
         this.beep(now + i*0.8 + 0.15, 0.1, 800); 
         this.beep(now + i*0.8 + 0.3, 0.4, 600); 
     }
+  },
+  playDoubleBeep() {
+    this.init();
+    const now = this.ctx.currentTime;
+    this.beep(now, 0.2, 600, 'sine');       
+    this.beep(now + 0.3, 0.2, 600, 'sine'); 
   }
 };
 
-/** LOGIC v6.1 */
+/** LOGIC v6.3 */
 const app = {
   state: {
     phase: 'idle', 
@@ -440,6 +472,7 @@ const app = {
       phone: document.getElementById('phoneInput'),
       sound: document.getElementById('checkSound'),
       vib: document.getElementById('checkVib'),
+      date: document.getElementById('checkDate'),
       wakeup: document.getElementById('wakeupTime')
     },
     alert: {
@@ -450,6 +483,7 @@ const app = {
     },
     punishMsg: document.getElementById('punish-msg'),
     punishTimer: document.getElementById('punish-timer'),
+    failReasonText: document.getElementById('fail-reason-text'),
     modal: document.getElementById('choiceModal'),
     modalTitle: document.getElementById('modalTitle'),
     modalText: document.getElementById('modalText'),
@@ -466,7 +500,7 @@ const app = {
     this.requestWakeLock();
     this.resetUI();
     
-    // Set default wakeup to next morning 7:00
+    // Set default wakeup
     this.els.inputs.wakeup.value = "07:00";
     
     let lastTap = 0;
@@ -492,8 +526,6 @@ const app = {
 
   startTrainingSequence() {
       this.els.modal.style.display = 'none';
-      
-      // Calc duration
       let mainDur = 0;
       switch(this.state.level) {
         case 1: mainDur = this.rand(2, 5); break;
@@ -502,12 +534,11 @@ const app = {
         case 4: mainDur = 9 * 3600000; break;
         case 5: mainDur = this.rand(2, 9); break;
       }
-      
       this.state.extensions = 0;
       
       if(this.state.settings.warmup) {
-          this.state.nextMainDur = mainDur; // Store for later
-          this.startPhase('warmup', this.rand(20, 30) * 60000); // 20-30 min warmup
+          this.state.nextMainDur = mainDur; 
+          this.startPhase('warmup', this.rand(20, 30) * 60000); 
       } else {
           this.startPhase('training', mainDur);
       }
@@ -532,12 +563,8 @@ const app = {
     const now = Date.now();
     this.state.elapsed = now - this.state.startTime;
     
-    // Reverse countdown for Sleep & Punishment
     if(this.state.phase === 'sleep' || this.state.phase === 'punishment') {
         const remaining = Math.max(0, this.state.targetDuration - this.state.elapsed);
-        if(this.state.phase === 'sleep') {
-            // Nothing special, just wait for 0
-        } 
         if(this.state.phase === 'punishment') {
             this.els.punishTimer.textContent = this.formatTime(remaining);
         } else {
@@ -548,9 +575,7 @@ const app = {
             if(this.state.phase === 'sleep') this.triggerSleepAlarm();
             else this.triggerAlertLogic();
         }
-    } 
-    // Normal Countup for training
-    else {
+    } else {
         this.els.elapsed.textContent = this.formatTime(this.state.elapsed);
         if (this.state.elapsed >= this.state.targetDuration) {
             this.triggerAlertLogic();
@@ -568,8 +593,8 @@ const app = {
       if(!confirm(`Confirmer ajout ${minutes} min ? Engagement définitif.`)) return;
       this.state.targetDuration += minutes * 60000;
       this.state.extensions += minutes;
-      this.state.startTime = Date.now() - this.state.elapsed; // Reset start base
-      this.startPhase('training', this.state.targetDuration); // Resume
+      this.state.startTime = Date.now() - this.state.elapsed; 
+      this.startPhase('training', this.state.targetDuration);
   },
 
   triggerAlertLogic() {
@@ -608,6 +633,12 @@ const app = {
     }
   },
 
+  testAlerts() {
+    this.toast('Test: 2 Bips puis 5 Bips');
+    SoundEngine.playDoubleBeep();
+    setTimeout(() => SoundEngine.playAlarmSequence(), 2000);
+  },
+
   showResultScreen() {
       this.showView('result');
       this.els.statusText.textContent = "Pause";
@@ -624,11 +655,11 @@ const app = {
   },
 
   triggerWhatsapp() {
-      // Basic report logic
       let cleanPhone = this.state.settings.phone.replace(/[^0-9]/g, '');
       let msg = `*Rapport Porte v6*\n⏱️ Total: ${this.formatTime(this.state.elapsed)}\n`;
       if(this.state.extensions > 0) msg += `✨ Bonus: +${this.state.extensions} min\n`;
-      msg += `📅 ${new Date().toLocaleString()}`;
+      let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
+      msg += date;
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   },
 
@@ -638,7 +669,9 @@ const app = {
       if(mode === 'nuitblanche') {
           // Direct Nuit Blanche
           this.els.punishMsg.textContent = "C’est parti pour une nuit entière sans sommeil à regarder cette porte, debout comme une merde pendant que les autres dorment.";
-          this.showView('sleepReport'); // Go to time selection to set wakeup
+          this.showView('sleepReport'); 
+          // Pas de raison d'échec affichée car mode direct
+          this.els.failReasonText.textContent = "Mode Nuit Blanche Activé.";
       } else {
           // Challenge
           this.showView('sleepSetup');
@@ -649,7 +682,7 @@ const app = {
       this.setCoachMessage(`Si tu ne dors pas dans les ${minutes} mn, tu reviens ici et tu seras puni.`);
       this.startPhase('sleep', minutes * 60000);
       this.showView('sleepRun');
-      this.els.statusPanel.classList.remove('active-ring'); // Silent mode visually
+      this.els.statusPanel.classList.remove('active-ring'); 
   },
 
   triggerSleepAlarm() {
@@ -666,18 +699,21 @@ const app = {
   },
 
   failSleep(reason) {
-      clearInterval(this.state.alarmInt); // Stop alarm if ringing
-      clearInterval(this.state.timerId); // Stop timer if manual fail
+      clearInterval(this.state.alarmInt); 
+      clearInterval(this.state.timerId); 
       
+      // ORDER TO GET OUT OF BED
+      alert("⚠️ SIGNALEMENT REÇU.\n\nTu n’as pas le droit de dormir davantage cette nuit.\nSort de ton lit et retourne immédiatement à la porte.\nTu y resteras debout jusqu’à l’heure de ton réveil.\n\nObéis sans délai.");
+
       this.showView('sleepReport');
       
       let msg = "";
       if(reason === 'voluntary') {
-          msg = "Signalement : Trop excité ou douloureux. Impossible de dormir.";
+          msg = "Je n’ai pas réussi à m’endormir (Trop excité/Douleur). Je me signale comme éveillé et mérite d’être puni.";
       } else {
-          msg = "Signalement : Le temps est écoulé et je suis encore éveillé.";
+          msg = "Je n’ai pas réussi à m’endormir (Temps écoulé). Je me signale comme éveillé et mérite d’être puni.";
       }
-      this.els.punishMsg.textContent = msg + " Je mérite d'être puni.";
+      this.els.failReasonText.textContent = msg;
   },
 
   calculatePunishment() {
@@ -696,7 +732,7 @@ const app = {
       const diff = wakeDate - now;
       if(diff <= 0) return alert("Heure invalide (déjà passée)");
 
-      // Textes punitifs
+      // Textes punitifs finaux
       let txt = "Puisque tu es incapable de t’endormir, le mieux c’est que tu finisses la nuit debout devant la porte.\n\n";
       txt += "Poses ton téléphone. Oublie ton lit, oublie ton besoin de dormir. Reprends ta position et garde la jusqu’au bout avec tes pieds bien à plat, le corps droit, les bras le long du corps ou derrière le dos, le regard fixe droit devant toi.\n\n";
       txt += "C'est ton devoir. Obéis sans délai.";
@@ -785,6 +821,7 @@ const app = {
       phone: this.els.inputs.phone.value,
       sound: this.els.inputs.sound.checked,
       vib: this.els.inputs.vib.checked,
+      date: this.els.inputs.date.checked,
       stats: this.state.stats
     };
     localStorage.setItem('gd_porte_v6', JSON.stringify(s));
@@ -797,6 +834,7 @@ const app = {
       if(s.phone) this.els.inputs.phone.value = s.phone;
       this.els.inputs.sound.checked = s.sound;
       this.els.inputs.vib.checked = s.vib;
+      this.els.inputs.date.checked = s.date;
       if(s.stats) this.state.stats = s.stats;
     }
   },
@@ -830,3 +868,4 @@ app.init();
 </script>
 </body>
 </html>
+
