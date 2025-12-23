@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v6.0</title>
+  <title>Entraînement Porte v6.1</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -226,7 +226,7 @@
 
 <main class="card">
   <h1>🚪 Entraînement Porte</h1>
-  <p class="subtitle">Version 6.0 • Discipline</p>
+  <p class="subtitle">Version 6.1 • Discipline</p>
 
   <!-- Memo Chargeur -->
   <div class="info-alert" id="memoCharge">
@@ -255,6 +255,7 @@
         <button onclick="app.triggerSelection(2)" class="btn-primary">Niveau 2 <span class="badge">4-7h</span></button>
         <button onclick="app.triggerSelection(3)" class="btn-primary">Niveau 3 <span class="badge">7-9h</span></button>
         <button onclick="app.triggerSelection(4)" class="btn-primary">Niveau 4 <span class="badge">9h Fixe</span></button>
+        <button onclick="app.triggerSelection(5)" class="btn-night">Niveau 5 <span class="badge">2-9h Chaos</span></button>
         <div style="border-top:1px solid #334155; margin:5px 0;"></div>
         <button onclick="app.setupSleepPunishment('nuitblanche')" class="btn-danger">💀 NUIT BLANCHE</button>
     </div>
@@ -401,7 +402,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v6.0 */
+/** LOGIC v6.1 */
 const app = {
   state: {
     phase: 'idle', 
@@ -829,4 +830,3 @@ app.init();
 </script>
 </body>
 </html>
-
