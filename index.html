@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Entraînement Porte v5.2</title>
+  <title>Entraînement Porte v5.3</title>
   <style>
     :root {
       --primary: #3b82f6; 
@@ -331,6 +331,9 @@
 
   <!-- Ecran 2 : En cours -->
   <div id="view-running" class="btn-grid hidden">
+    <!-- NEW: Bouton ajout temps rapide -->
+    <button onclick="app.addRunningTime(10)" class="btn-secondary" style="font-size: 0.9rem; padding: 10px; margin-bottom: 5px;">➕ Ajouter 10 min</button>
+    
     <button onclick="app.toggleOledMode()" class="btn-oled" style="height: 120px; font-size: 1.3rem;">
         🌑 ÉTEINDRE ÉCRAN
         <span style="font-size:0.8rem; font-weight:normal; color:#888;">(Économie Batterie / OLED)</span>
@@ -341,6 +344,15 @@
 
   <!-- Ecran 3 : Résultat Garde -->
   <div id="view-result" class="btn-grid hidden">
+    
+    <!-- NEW: Bouton Prolongation Fin -->
+    <div id="extension-area" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <button onclick="app.extendSession(30)" class="btn-warning" style="border: 1px dashed #f59e0b; background: rgba(245, 158, 11, 0.1);">
+            ⌛ Rallonger la séance (+30 min)
+        </button>
+        <p id="ext-feedback" style="font-size:0.8rem; color:#f59e0b; margin-top:5px; display:none">Temps ajouté !</p>
+    </div>
+
     <div id="rating-area">
         <p style="text-align:center; color:white; font-size:1.1rem">Résultat de la session ?</p>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:10px">
@@ -437,7 +449,7 @@ const SoundEngine = {
   }
 };
 
-/** LOGIC v5.2 */
+/** LOGIC v5.3 */
 const app = {
   state: {
     phase: 'idle', 
@@ -456,7 +468,8 @@ const app = {
     plannedWarmupDur: 0,
     plannedStretchDur: 0,
     adminKey: "Hubble:2001",
-    remoteData: null // Store encoded string from URL
+    remoteData: null,
+    extensions: 0 // New: Track voluntary time added
   },
   
   els: {
@@ -491,6 +504,8 @@ const app = {
     waArea: document.getElementById('whatsapp-area'),
     redoArea: document.getElementById('redo-area'),
     ratingArea: document.getElementById('rating-area'),
+    extensionArea: document.getElementById('extension-area'),
+    extFeedback: document.getElementById('ext-feedback'),
     settingsPanel: document.getElementById('settingsPanel'),
     memoCharge: document.getElementById('memoCharge'),
     
@@ -570,8 +585,6 @@ const app = {
                   
                   // Fake end time (assuming clicked recently)
                   const now = new Date();
-                  // We add MAIN duration to current time to guess end time if user just clicked link at start
-                  // Note: This assumes trainer clicks roughly when message received.
                   const end = new Date(now.getTime() + mMin*60000 + wMin*60000); 
                   this.els.resEnd.textContent = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
@@ -596,6 +609,7 @@ const app = {
       SoundEngine.init();
       this.state.level = lvl;
       this.state.durations = { warmup: 0, training: 0, stretching: 0, night: 0 };
+      this.state.extensions = 0; // Reset extensions
       
       this.showModal(
           "🔥 Échauffement ?",
@@ -618,8 +632,7 @@ const app = {
       this.els.modal.style.display = 'none';
       this.saveSettings();
 
-      // 1. CALCULATE ALL DURATIONS NOW
-      // Main
+      // 1. CALCULATE ALL DURATIONS
       let mainDur = 0;
       switch(this.state.level) {
         case 1: mainDur = this.rand(2, 5); break;
@@ -630,21 +643,19 @@ const app = {
       }
       this.state.plannedMainDur = mainDur;
 
-      // Warmup
       let warmDur = 0;
       if (this.state.settings.warmup) {
           warmDur = this.getWeightedDuration();
           this.state.plannedWarmupDur = warmDur;
       }
 
-      // Stretch
       let stretchDur = 0;
       if (this.state.settings.stretch) {
           stretchDur = this.getWeightedDuration();
           this.state.plannedStretchDur = stretchDur;
       }
 
-      // 2. SEND LINK IMMEDIATELY
+      // 2. SEND LINK
       const mMin = Math.floor(mainDur / 60000);
       const wMin = Math.floor(warmDur / 60000);
       const sMin = Math.floor(stretchDur / 60000);
@@ -659,7 +670,6 @@ const app = {
       let secretLink = `${baseUrl}?data=${encoded}`;
 
       let msg = `🔐 *SÉCURITÉ*\n🚀 DÉBUT MISSION\nCliquez sur le lien sécurisé :\n${secretLink}`;
-      
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
 
       // 3. START
@@ -736,8 +746,6 @@ const app = {
           "Ton entraînement va commencer. Il va te permettre de garder l’habitude de rester à la porte quand un Maître voudra te punir."
       ];
       this.setCoachMessage(msgs[Math.floor(Math.random()*msgs.length)]);
-
-      // Use pre-calculated duration
       this.startPhase('training', this.state.plannedMainDur);
   },
 
@@ -754,6 +762,37 @@ const app = {
     if (this.state.timerId) clearInterval(this.state.timerId);
     this.state.timerId = setInterval(() => this.tick(), 1000);
     this.requestWakeLock();
+  },
+
+  addRunningTime(minutes) {
+      const addMs = minutes * 60 * 1000;
+      this.state.targetDuration += addMs;
+      this.state.extensions += minutes; // Track bonus
+      
+      this.toast(`Temps ajouté : +${minutes} min`);
+      if(this.state.settings.sound) SoundEngine.beep(SoundEngine.ctx.currentTime, 0.1, 400);
+  },
+
+  extendSession(minutes) {
+      if(!confirm(`Êtes-vous sûr de vouloir ajouter ${minutes} minutes ?\nC'est un engagement définitif.`)) return;
+
+      const addMs = minutes * 60 * 1000;
+      this.state.targetDuration += addMs;
+      this.state.extensions += minutes; // Track bonus
+      
+      // Reset start time to keep current elapsed
+      this.state.startTime = Date.now() - this.state.elapsed;
+      
+      this.setCoachMessage(`Prolongation de ${minutes} min acceptée. Retourne à ton poste.`);
+      
+      this.showView('running');
+      this.els.statusPanel.classList.add('active-ring');
+      
+      if (this.state.timerId) clearInterval(this.state.timerId);
+      this.state.timerId = setInterval(() => this.tick(), 1000);
+      this.requestWakeLock();
+      
+      this.toast(`C'est reparti pour ${minutes} min`);
   },
 
   tick() {
@@ -819,7 +858,6 @@ const app = {
       
       if (this.state.settings.stretch) {
           this.setCoachMessage("Fin de ton entraînement. Tu vas pouvoir faire tes étirements en restant bien planté devant la porte et jouir de tes douleurs et de la fatigue");
-          // Use Pre-calculated Duration!
           setTimeout(() => this.startPhase('stretching', this.state.plannedStretchDur), 2000);
       } else {
           this.showResultScreen();
@@ -836,6 +874,7 @@ const app = {
   },
 
   showResultScreen() {
+      this.els.extensionArea.classList.remove('hidden'); 
       this.els.ratingArea.classList.remove('hidden');
       this.els.waArea.classList.add('hidden');
       this.els.redoArea.classList.add('hidden');
@@ -876,6 +915,7 @@ const app = {
         this.updateStatsUI();
         this.state.lastResult = success;
         
+        this.els.extensionArea.classList.add('hidden'); 
         this.els.ratingArea.classList.add('hidden');
         
         const badLuck = Math.floor(Math.random() * 3) === 0;
@@ -906,6 +946,9 @@ const app = {
     let date = this.state.settings.date ? `📅 ${new Date().toLocaleString()}` : '';
     
     let msg = `*Rapport Porte*\n⏱️ Total : ${this.formatTime(total)}\n`;
+    if(this.state.extensions > 0) {
+        msg += `✨ *Bonus Volontaire : +${this.state.extensions} min*\n`;
+    }
     if(parts.length > 0) msg += `(${parts.join(' + ')})\n`;
     msg += `Résultat : ${status}\n${date}`;
     
@@ -1008,3 +1051,4 @@ app.init();
 </script>
 </body>
 </html>
+
